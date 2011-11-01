@@ -1,0 +1,53 @@
+{
+  "BaseData" : {
+    "Domain"    : <DOMAIN>,
+    "AdminMail  : <ADMINMAIL>,
+    "$TTL"      : <$TTL>,
+    "IpAddr"    : <IPADDR>
+  }
+
+  "DNSServer" : {
+    "Primary"     : {
+      "Hostname"  : <PRIM_HOSTNAME>,
+      "IpAddr"    : <PRIM_IPADDR>
+    }
+    "Secondary"   : {
+      "Hostname"  : <SEC_HOSTNAME>,
+      "IpAddr"    : <SEC_IPADDR>
+    }
+    "NS3"         : {
+      "Hostname"  : <NS3_HOSTNAME>,
+      "IpAddr"    : <NS3_IPADDR>
+    }
+    "NS4"         : {
+      "Hostname"  : <NS4_HOSTNAME>,
+      "IpAddr"    : <NS4_IPADDR>
+    }
+  }
+
+  "MailServer" : {
+    "Primary"     : {
+      "Hostname"  : <PRIM_HOSTNAME>,
+      "Priority"  : <PRIM_PRIORITY>
+    }
+    "Secondary"   : {
+      "Hostname"  : <SEC_HOSTNAME>,
+      "Priority"  : <SEC_PRIORITY>
+    }
+    "MS3"         : {
+      "Hostname"  : <MS3_HOSTNAME>,
+      "Priority"  : <MS3_PRIORITY>
+    }
+    "MS4"         : {
+      "Hostname"  : <MS4_HOSTNAME>,
+      "Priority"  : <MS4_PRIORITY>
+    }
+  }
+
+  "Time Periods" : {
+    "Refresh"    : <REFRESH>,
+    "Retry"      : <RETRY>,
+    "Expire"     : <EXPIRE>,
+    "MinTTL"     : <MINTTL>
+  }
+}
