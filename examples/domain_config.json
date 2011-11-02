@@ -1,0 +1,38 @@
+{
+  "Domain"        : <DOMAIN>,
+  
+  "AdminMail"     : <ADMINMAIL>,
+  
+  "$TTL"          : <$TTL>,
+  
+  "IPAddr"        : <IPADDR>,
+  
+  "DNSSevers"     : {
+     "NS1"         : {
+      "Hostname"  : <HOSTNAME>,
+      "IPAddr"    : <IPADDR>
+    },
+    "NS2"         : {
+      "Hostname"  : <HOSTNAME>,
+      "IPAddr"    : <IPADDR>
+    }
+  },
+
+  "MailServers"   : {
+    "MS1"         : {
+      "Priority"  : <PRIORITY>,
+      "Hostname"  : <HOSTNAME>
+    },
+    "MS2"         : {
+      "Priority"  : <PRIORITY>,
+      "Hostname"  : <HOSTNAME>
+    }
+  },
+
+  "TimePeriods"   : {
+    "Refresh"     : <REFRESH>,
+    "Retry"       : <RETRY>,
+    "Expire"      : <EXPIRE>,
+    "MinTTL"      : <MINTTL>
+  }
+}
