@@ -1,3 +1,7 @@
+//
+// Example polling webserver for NDNS load balancer
+//
+
 var ndns = require('../../lib/ndns');
 var http = require('http');
 
