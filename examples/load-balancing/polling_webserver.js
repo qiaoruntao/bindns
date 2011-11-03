@@ -5,7 +5,7 @@
 var ndns = require('../../lib/ndns');
 var http = require('http');
 
-ndns.poller.client.startPoller();
+ndns.poller.client.startPoller(3000);
 
 http.createServer(function (req, res) {
   var startTime = new Date();
