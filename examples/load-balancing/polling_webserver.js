@@ -5,7 +5,7 @@
 var ndns = require('../../lib/ndns');
 var http = require('http');
 
-ndns.poller.client.startPoller(3000);
+ndns.poller.client.startPoller(localhost, 5000);
 
 http.createServer(function (req, res) {
   var startTime = new Date();
@@ -14,7 +14,7 @@ http.createServer(function (req, res) {
   res.end('Hello World\n');
 
   var endTime = new Date();
-  ndns.poller.client.notifyResponseTime(endTime.getTime()-startTime.getTime());
-}).listen(1337, "127.0.0.1");
+  ndns.poller.client.updateResponseTime(endTime.getTime()-startTime.getTime());
+}).listen(3000, "127.0.0.1");
 
-console.log('Server running at http://127.0.0.1:1337/');
+console.log('Server running at http://127.0.0.1:3000/');
