@@ -1,11 +1,11 @@
 //
-// Example polling webserver for NDNS load balancer
+// Example polled webserver for NDNS load balancer
 //
 
 var ndns = require('../../lib/ndns');
 var http = require('http');
 
-ndns.poller.client.startPoller(localhost, 5000);
+ndns.poller.client.startPoller("127.0.0.1", 5000);
 
 http.createServer(function (req, res) {
   var startTime = new Date();
