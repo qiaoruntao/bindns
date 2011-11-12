@@ -10,7 +10,7 @@ ndns.poller.server.createServer(5000);
 
 var dns_server = ndns.createServer(udp4);
 server.on('request', function(req, res) {
-  var answer = ndns.poller.server.getServerWithMinLoad();
+  var answer = ndns.poller.server.getServerWithMinLoad('server1.example.com');
   // ^^^^^^^^^^^^^^^^
   // Serve answer to question here
   // ^^^^^^^^^^^^^^^
