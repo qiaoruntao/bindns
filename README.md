@@ -132,4 +132,97 @@ This method can be called any number of times and must be called before
 `response.send()` is called;
 
 ### response.addQuestion(name, class, type)
+Sets the question on the response 
+
+# Load Balancing
+
+## ndns-nameserver.js
+
+This is a file containing an implementation of a basic DNS nameserver which listens
+on port 53 and replies to DNS queries with DNS responses following the DNS protocol
+specification.
+It also runs an instance of `ndns.poller.server` and `ndns.poller.client` on localhost
+
+### Zone files
+	Zone files are presently hardcoded into the `ndns-nameserver.js` file in a variable called 'zone'.v
+	The Zone files are implemented using a tree structure and can be written to using addToTree(tree, branch, records ).
+	All RR records are stored as an array under a '*' key in the final leaf of the domain tree.
+
+	Example #1:
+	addToTree(zone, ["in","aiesec"],
+                { '*' : [
+                          { name: 'aiesec.in', rr: 'SOA', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com. root.box481.bluehost.com. 2011031102 86400 7200 3600000 300'},
+                          { name: 'aiesec.in', rr: 'TXT', ttl: '14400', dclass: 'IN', value: 'v=spf1 a mx ptr include:bluehost.com ?all' },
+                          { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com.' },
+                          { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns2.bluehost.com.' },
+                          { name: 'aiesec.in', rr: 'MX', ttl: '14400', dclass: 'IN', value: '0 aiesec.in' },
+                          { name: 'aiesec.in', rr: 'A', ttl: '14400', dclass: 'IN', value: '74.220.219.81' },
+                          { name: 'ns1.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.1' },
+                          { name: 'ns2.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.2' },
+                        ] } );
+
+### Round Robin Load Balancing
+	Round Robin load balancing is achieved by adding the `index` = 0 and `balance` = 'rr' keys to the A record in a domain.
+	The `value` key should store an array of IPs among which the load will be balanced.
+	The `name` key can also be a array to facilitate round robin load balancing between nameservers.
+
+	Example #1 - Load balancing A records with a constant name:
+	addToTree(zone, ["ac","in","lnmiit","proxy"],
+									{ '*' : [
+														{ name: 'proxy.lnmiit.ac.in', rr: 'A', ttl: '14400', dclass: 'IN' value: ['172.22.2.211',
+																																																			'172.22.2.212'], index: 0, balance: 'rr' }
+													]
+									});
+	Example #2 - Load balancing NS records with different names:
+	addToTree(zone, ["com","google"],
+                { '*' : [
+                          { name: ['ns1.google.com',
+																	'ns2.google.com',
+																	'ns3.google.com',
+																	'ns4.google.com'], rr: 'NS', ttl: '14400', dclass: 'IN', value: ['216.239.32.10',
+																																																	'216.239.34.10',
+																																																	'216.239.36.10',
+																																																	'216.239.38.10'], index: 0, balance: 'rr' }
+                        ]
+                } );
+
+### Dynamic Load Balancing
+	Dynamic load balancing is achieved by adding the `balance` = 'dyn' key to the A record in a domain.
+	The `value` key should store an array of IPs among which the load will be balanced.
+
+	Note : The servers whose IPs are mentioned should be running an instance of `ndns.poller.client` or the load balancing 
+	will default to round robin.
+	
+	Example #1:
+	addToTree(zone, ["in","aiesec"],
+                { '*' : [
+                          { name: 'aiesec.in', rr: 'SOA', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com. root.box481.bluehost.com. 2011031102 86400 7200 3600000 300'},
+                          { name: 'aiesec.in', rr: 'TXT', ttl: '14400', dclass: 'IN', value: 'v=spf1 a mx ptr include:bluehost.com ?all' },
+                          { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com.' },
+                          { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns2.bluehost.com.' },
+                          { name: 'aiesec.in', rr: 'MX', ttl: '14400', dclass: 'IN', value: '0 aiesec.in' },
+                          { name: 'aiesec.in', rr: 'A', ttl: '14400', dclass: 'IN', value: ['74.220.219.81', 
+                                                                                            '74.220.219.82',
+                                                                                            '127.0.0.1',
+                                                                                            '127.0.0.2'] , balance: 'dyn' }, // Dynamic Load Balancingi
+                          { name: 'ns1.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.1' },
+                          { name: 'ns2.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.2' },
+                        ] } );
+
+
+## ndns.poller.server.createServer ( POLL_PORT )
+	This function creates a server which listens on a port (default 5000) for UDP packets from `ndns.poller.client`.
+	It maintains a list of the IP addresses of the fastest webservers within a particular domain.
+	
+	Example #1:
+		var ndns = require('../lib/ndns');
+		ndns.poller.server.createServer (5000);
+
+
+## ndns.poller.client.startPoller ( server_host, server_port, domain_name)
+	This function create a client which sends UDP packet updates to `ndns.poller.server`. 
+	
+	Example #1:
+		var ndns = require('../lib/ndns');
+		ndns.poller.client.startPoller ( '127.0.0.1', 5000, 'google.com' );
 
