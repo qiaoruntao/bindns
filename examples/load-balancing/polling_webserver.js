@@ -5,7 +5,7 @@
 var ndns = require('../../lib/ndns');
 var http = require('http');
 
-ndns.poller.client.startPoller("127.0.0.1", 5000);
+ndns.poller.client.startPoller("127.0.0.1", 5000, 'server1.example.com');
 
 http.createServer(function (req, res) {
   res.writeHead(200, {'Content-Type': 'text/plain'});
