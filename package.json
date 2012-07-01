@@ -1,15 +1,17 @@
 {
   "name": "ndns",
   "description": "dns library for node.js",
-  "version": "0.1.0",
-  "homepage": "https://github.com/skampler/ndns",
-  "repository": "https://github.com/skampler/ndns.git",
-  "author": "tomas",
+  "version": "0.1.2",
+  "homepage": "http://github.com/atrniv/ndns",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/atrniv/ndns.git"
+  },
+  "author": "subszero",
   "directories": {
     "lib": "lib"
   },
   "engines": {
     "node": "*"
-  },
-  "main": "index"
+  }
 }
