@@ -1,0 +1,85 @@
+env:
+  browser: false
+  node: true
+  commonjs: true
+  es6: true
+extends:
+  - eslint:recommended
+parserOptions:
+  ecmaVersion: 8
+rules:
+  no-console: off
+  camelcase: off
+  eqeqeq:
+    - error
+    - always
+    - null: ignore
+  yoda:
+    - error
+  radix:
+    - error
+  brace-style:
+    - error
+    - 1tbs
+    - allowSingleLine: true
+  array-bracket-spacing:
+    - error
+  eol-last:
+    - error
+  func-call-spacing:
+    - error
+  key-spacing:
+    - error
+  keyword-spacing:
+    - error
+  no-trailing-spaces:
+    - error
+  space-before-function-paren:
+    - error
+    - anonymous: always
+      named: never
+      asyncArrow: always
+  space-before-blocks:
+    - error
+  no-with:
+    - error
+  no-undef:
+    - error
+  no-extend-native:
+    - error
+  indent:
+    - error
+    - 4
+    - SwitchCase: 1
+  linebreak-style:
+    - error
+    - unix
+  quotes:
+    - error
+    - double
+    - avoidEscape: true
+  semi:
+    - error
+    - always
+  no-unused-vars:
+    - warn
+    - args: none
+  no-constant-condition: off
+  no-case-declarations: off
+  no-empty:
+    - error
+    - allowEmptyCatch: true
+  no-use-before-define:
+    - error
+    - functions: false
+      variables: false
+  object-curly-spacing:
+    - error
+    - never
+  no-extra-parens:
+    - 2
+    - all
+  prefer-const:
+    - error
+  no-var:
+    - error
