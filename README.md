@@ -21,12 +21,12 @@ const server = new ndns.Server("udp4", (req, res) => {
     res.header.aa = 1; // Authoritative for this zone.
     res.header.rcode = ndns.ns_rcode.noerror; // NOERROR response code
     res.addRR(
-        ndns.ns_sect.an,  // answer section
-        req.q[i].name,    // host name
-        ndns.ns_type.txt, // TXT record
-        ndns.ns_class.in, // IN
-        3600,             // TTL
-        "hello, world"    // data
+        ndns.ns_sect.an,      // answer section
+        req.question[0].name, // host name
+        ndns.ns_type.txt,     // TXT record
+        ndns.ns_class.in,     // IN
+        3600,                 // TTL
+        "hello, world"        // data
     );
     res.send();
 });
@@ -176,7 +176,7 @@ Sets the question.
 Check out https://github.com/zbjornson/node-dnsperf for benchmarking.
 
 | Library | Throughput (QPS) | Latency (ms) | Notes |
-| --- | --- | --- | --- |
+| --- | ---: | ---: | --- |
 | this | 50,295 | 1.9 |
 | https://github.com/raybellis/evldns | 50,570 | 1.9 | C library |
 | https://github.com/tjfontaine/node-dns | 35,042 | 2.8 | a.k.a. "native-dns" |
