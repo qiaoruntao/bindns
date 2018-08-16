@@ -1,86 +1,95 @@
 ndns -- dns client/server library for nodejs
 ==============================
 
-## Synposis
+This is a port of parts of libbind required to make a DNS server, plus a DNS
+server implementation. It's very fast (~41k QPS on a computer that a server
+written in C runs at ~50k QPS) and, given that it's a port of the C code,
+hopefully low on bugs.
 
-An example DNS server written with node which responds 'Hello World':
+Forked from skampler/ndns (gone), which was forked from jsjohnst/ndns.
+Significant changes:
+* Code organization, ES6-ification, JSDoc.
+  * Split code into separate files, as found in libbind.
+  * Restored some of the names back to the original ones used in libbind (e.g.
+    `ns_f` -> `ns_flag`).
+  * Added JSDoc with type annotations, taking from libbind. VSCode's analyzer
+    reports no type errors.
+* Code errors fixed.
+  * `errno` consistently set to numbers.
+  * Remove use of reserved word `class`.
+  * Remove usage of node's deprecated `sys` module.
+  * Remove `freelist` dependency.
+  * Some typos.
+* Docs corrected.
 
-	var ndns = require('ndns');
+An example DNS server which responds with a "Hello World" TXT record:
 
-	ndns.createServer('udp4', function (req, res) {
-	        res.setHeader(req.header);
-	        res.header.qr = 1;
-	    res.header.aa = 1;
-	    res.header.rd = 0;
-	    res.header.ra = 0;
-	    res.header.ancount = 0;
-	    for (var i = 0; i < req.q.length; i++) {
-	  res.q.add(req.q[i]);
-	  res.addRR(req.q[i].name, 3600, ndns.ns_t.txt, "hello, world");
-	  res.header.ancount++;
-	    }
-	    res.send();
-	}).bind(5300);
+```js
+const ndns = require('ndns');
 
-	console.log("Server running at 0.0.0.0:5300")
+ndns.createServer('udp4', (req, res) => {
+	res.addRR(ndns.ns_sect.an, req.q[i].name, ndns.ns_type.txt, ndns.ns_class.in, 3600, "hello, world");
+	res.send();
+}).bind(5300);
 
-To run the server, put the code into a file called example.js and execute it
-with the node program:
+console.log("Server running at 0.0.0.0:5300")
+```
 
-	\> node example.js
-	Server running at 0.0.0.0:5300
-
-All of the examples in the documentation can be run similarly.
-
-## ndns
-
-To use the ndns server and client one must require('ndns').
+## API
 
 DNS request messages are represented by an object like this:
 
-	{ header:
-	  { id: 39545
-	    , qr: 0
-	    , opcode: 0
-	    , aa: 0
-	    , tc: 0
-	    , rd: 1
-	    , ra: 0
-	    , z: 0
-	    , ad: 0
-	    , cd: 0
-	    , rcode: 0
-	    , qdcount: 1
-	    , ancount: 0
-	    , nscount: 0
-	    , arcount: 0
-	  }
-	  , q: 
-	  { '0': 
-	    { name: 'example.com'
-	      , type: 1
-	      , class: 1
-	    }
-	    , length: 1
-	  }
-	  , rr: 
-	  { '0': 
-	    { name: 'example.com'
-	      , ttl: 3600
-	      , class: 1
-	      , type: 1
-	      , rdata: '127.0.0.1'
-	    }
-	    '1': 
-	    { name: 'example.com'
-	      , ttl: 3600
-	      , class: 1
-	      , type: 1
-	      , rdata: '127.0.0.2'
-	    }
-	    , length: 2
-	  }
-	}
+```js
+({
+	header: {
+		id: 39545,
+		qr: 0,
+		opcode: 0,
+		aa: 0,
+		tc: 0,
+		rd: 1,
+		ra: 0,
+		z: 0,
+		ad: 0,
+		cd: 0,
+		rcode: 0,
+		qdcount: 1,
+		ancount: 0,
+		nscount: 0,
+		arcount: 0
+	},
+	q: [
+		{
+			name: "example.com",
+			type: 1,
+			class: 1
+		}
+	],
+	rr: [
+		{
+			name: "example.com",
+			ttl: 3600,
+			class: 1,
+			type: 1,
+			rdata: "127.0.0.1"
+		}, {
+			name: "example.com",
+			ttl: 3600,
+			class: 1,
+			type: 1,
+			rdata: "127.0.0.2"
+		}
+	]
+})
+```
+
+There are several enums that you need to construct a response. See lib/nameser.js
+for the full list.
+
+* `ns_sect` - Section constants
+* `ns_class` - Values for the `class` field
+* `ns_type` - Values for the `type` field
+* `ns_flag` - Flag constants
 
 ## ndns.Server
 
@@ -98,7 +107,7 @@ Return a new dns server object
 The requestListener is a function which is automatially added to the 'request'
 event.
 
-For documentation on dgram.Socket, see http://nodejs.org/api.html#dgram-267
+For documentation on dgram.Socket, see https://nodejs.org/api/dgram.html#dgram_class_dgram_socket
 
 ## ndns.ServerRequest
 
@@ -133,99 +142,3 @@ This method can be called any number of times and must be called before
 
 ### response.addQuestion(name, class, type)
 Sets the question on the response 
-
-# Load Balancing
-
-## ndns-nameserver.js
-
-This is a file containing an implementation of a basic DNS nameserver which listens
-on port 53 and replies to DNS queries with DNS responses following the DNS protocol
-specification.
-It also runs an instance of `ndns.poller.server` and `ndns.poller.client` on localhost
-
-### Zone files
-Zone files are presently hardcoded into the `ndns-nameserver.js` file in a variable called 'zone'.v
-The Zone files are implemented using a tree structure and can be written to using addToTree(tree, branch, records ).
-All RR records are stored as an array under a `*` key in the final leaf of the domain tree.
-
-Example #1:
-	
-	addToTree(zone, ["in","aiesec"],
-	    { '*' : [
-	    { name: 'aiesec.in', rr: 'SOA', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com. root.box481.bluehost.com. 2011031102 86400 7200 3600000 300'},
-	    { name: 'aiesec.in', rr: 'TXT', ttl: '14400', dclass: 'IN', value: 'v=spf1 a mx ptr include:bluehost.com ?all' },
-	    { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com.' },
-	    { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns2.bluehost.com.' },
-	    { name: 'aiesec.in', rr: 'MX', ttl: '14400', dclass: 'IN', value: '0 aiesec.in' },
-	    { name: 'aiesec.in', rr: 'A', ttl: '14400', dclass: 'IN', value: '74.220.219.81' },
-	    { name: 'ns1.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.1' },
-	    { name: 'ns2.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.2' },
-	    ] } );
-
-### Round Robin Load Balancing
-Round Robin load balancing is achieved by adding the `index` = 0 and `balance` = 'rr' keys to the A record in a domain.
-The `value` key should store an array of IPs among which the load will be balanced.
-The `name` key can also be a array to facilitate round robin load balancing between nameservers.
-
-Example #1 - Load balancing A records with a constant name:
-
-	addToTree(zone, ["ac","in","lnmiit","proxy"],
-	    { '*' : [
-	    { name: 'proxy.lnmiit.ac.in', rr: 'A', ttl: '14400', dclass: 'IN' value: ['172.22.2.211', '172.22.2.212'], index: 0, balance: 'rr' }
-	    ]});
-
-Example #2 - Load balancing NS records with different names:
-
-	addToTree(zone, ["com","google"],
-	    { '*' : [
-	    { name: ['ns1.google.com',
-	    'ns2.google.com',
-	    'ns3.google.com',
-	    'ns4.google.com'], rr: 'NS', ttl: '14400', dclass: 'IN', value: ['216.239.32.10',
-	                                                                     '216.239.34.10',
-	                                                                     '216.239.36.10',
-	                                                                     '216.239.38.10'], index: 0, balance: 'rr' }]});
-
-### Dynamic Load Balancing
-Dynamic load balancing is achieved by adding the `balance` = 'dyn' key to the A record in a domain.
-The `value` key should store an array of IPs among which the load will be balanced.
-
-Note : The servers whose IPs are mentioned should be running an instance of `ndns.poller.client` or the load balancing 
-will default to round robin.
-
-Example #1:
-
-	addToTree(zone, ["in","aiesec"],
-	              { '*' : [
-	                        { name: 'aiesec.in', rr: 'SOA', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com. root.box481.bluehost.com. 2011031102 86400 7200 3600000 300'},
-	                        { name: 'aiesec.in', rr: 'TXT', ttl: '14400', dclass: 'IN', value: 'v=spf1 a mx ptr include:bluehost.com ?all' },
-	                        { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns1.bluehost.com.' },
-	                        { name: 'aiesec.in', rr: 'NS', ttl: '86400', dclass: 'IN', value: 'ns2.bluehost.com.' },
-	                        { name: 'aiesec.in', rr: 'MX', ttl: '14400', dclass: 'IN', value: '0 aiesec.in' },
-	                        { name: 'aiesec.in', rr: 'A', ttl: '14400', dclass: 'IN', value: ['74.220.219.81', 
-	                                                                                          '74.220.219.82',
-	                                                                                          '127.0.0.1',
-	                                                                                          '127.0.0.2'] , balance: 'dyn' }, // Dynamic Load Balancingi
-	                        { name: 'ns1.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.1' },
-	                        { name: 'ns2.bluehost.com.', rr: 'A', ttl: '14400', dclass: 'IN', value: '127.0.0.2' },
-	                      ] } );
-
-
-## ndns.poller.server.createServer ( POLL_PORT )
-This function creates a server which listens on a port (default 5000) for UDP packets from `ndns.poller.client`.
-It maintains a list of the IP addresses of the fastest webservers within a particular domain.
-
-Example #1:
-
-	var ndns = require('../lib/ndns');
-	ndns.poller.server.createServer (5000);
-
-
-## ndns.poller.client.startPoller ( server_host, server_port, domain_name)
-This function create a client which sends UDP packet updates to `ndns.poller.server`. 
-	
-Example #1:
-
-	var ndns = require('../lib/ndns');
-	ndns.poller.client.startPoller ( '127.0.0.1', 5000, 'google.com' );
-
