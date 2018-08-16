@@ -1,21 +1,25 @@
-ndns: Fast dns client/server library for nodejs
+bindns: Fast DNS library, server and client for Node.js based on libbind-6
 ==============================
 
-**TODO This should be renamed.** It is not the `ndns` library published to npm.
+A **DNS client and server** built from a port of
+[libbind](https://www.isc.org/downloads/libbind/) with **zero dependencies**.
+It's very **fast**: it has about the same throughput as a server written with
+the [evldns C library](https://github.com/raybellis/evldns) (~50k QPS on a 4.0
+GHz i7-6700k CPU), and given that it's a port of libbind, hopefully it's low on
+bugs.
 
-A DNS client and server built from a port of libbind. It's very fast: it has
-approximately the same measured throughput as a server written with the [evldns
-C library](https://github.com/raybellis/evldns) (~50k QPS on a 4.0 GHz i7-6700k
-CPU), and given that it's a port of libbind, hopefully it's low on bugs.
+See **history** at the bottom for info on all of the forks of `ndns` and how
+this library came to be.
 
-Zero dependencies!
+This module isn't published to npm yet, so install it from github:
+`yarn add primitybio/bindns`.
 
 ## Example
 
 An example DNS server which responds with a "Hello World" TXT record:
 
 ```js
-const ndns = require("ndns");
+const ndns = require("bindns");
 
 const server = new ndns.Server("udp4", (req, res) => {
     res.header.aa = 1; // Authoritative for this zone.
@@ -98,41 +102,66 @@ common ones listed below. See lib/nameser.js for the full list.
 * `ns_type` - Values for the `type` field
 * `ns_flag` - Flag constants
 
-## ndns.Server
+### ndns.Server
 
-### Constructor
+#### Constructor
 
 `new Server(type: "udp4"|"udp6"[, listener: (req, res) => void])`
 
 `listener` is an optional listener for the `"request"` event.
 
-### Event: "request"
+#### Event: "request"
 
 `function (request: ServerRequest, response: ServerResponse) {}`
 
-### Event: "listening"
+#### Event: "listening"
 
 Inherited from `dgram.Socket`.
 
-### Event: "close"
+#### Event: "close"
 
 Inherited from `dgram.Socket`.
 
-### Evenet: "error"
+#### Evenet: "error"
 
 Inherited from `dgram.Socket`.
 
-## ServerRequest
+### ServerRequest
 
-This object is created internally by a DNS server, not by the user, and passed
-as the first argument to a 'request' listener. See `response.header` below.
+This object is created internally by a DNS server as the result of a DNS query,
+not by the user, and passed as the first argument to a 'request' listener. Note:
+`answer`, `authoritative` and `additional` properties are present, but are
+meaningless in queries.
 
-## ServerResponse
+#### request.header
+
+This object is an instance of `MessageHeader`. Properties:
+
+* `id` (read-only) ID of query.
+* `qr` (read-only) Query/response flag.
+* `opcode` (read-only) Operation code (one of `ns_opcode`).
+* `aa` (N/A for queries) Authoritative answer.
+* `tc` (N/A for queries) Truncation flag.
+* `rd` (read-only) Recursion desired.
+* `ra` (N/A for queries) Recursion available.
+* `z` (read-only) Three bits set to zero.
+* `ad` (N/A for queries) Authentic data (DNSSEC).
+* `cd` (read-only) Checking disabled (DNSSEC).
+* `rcode` Response code (one of `ns_rcode`).
+* `qdcount`, `ancount`, `nscount` and `arcount` (read-only) The number of
+  questions, answers, name servers and additional records, respectively. Only
+  `qdcount` should be non-zero for queries.
+
+#### request.question
+
+An array of `MessageQuestion`s.
+
+### ServerResponse
 
 This object is created internally by a DNS server, not by the user. It is passed
 as the second argument to the 'request' event.
 
-### response.header
+#### response.header
 
 This object is an instance of `MessageHeader`. Properties:
 
@@ -152,7 +181,7 @@ This object is an instance of `MessageHeader`. Properties:
   questions, answers, name servers and additional records, respectively. These
   are incremented when you call `response.addRR()`.
 
-### response.addRR(sect, name, type, klass, ttl, ...info)
+#### response.addRR(sect, name, type, klass, ttl, ...info)
 
 Adds an RR to the response.
 
@@ -163,11 +192,23 @@ Adds an RR to the response.
 * @param {number} ttl
 * @param {Array<string>} info
 
-## ClientRequest
+#### response.answer
+
+An array of `MessageRR`s.
+
+#### response.authoritative
+
+An array of `MessageRR`s.
+
+#### response.additional
+
+An array of `MessageRR`s.
+
+### ClientRequest
 
 This object is created by `client.request(port, host, callback)`.
 
-### request.addQuestion(name, class, type)
+#### request.addQuestion(name, class, type)
 
 Sets the question.
 
@@ -177,19 +218,32 @@ Check out https://github.com/zbjornson/node-dnsperf for benchmarking.
 
 | Library | Throughput (QPS) | Latency (ms) | Notes |
 | --- | ---: | ---: | --- |
-| this | 50,295 | 1.9 |
+| **this library** | 50,295 | 1.9 |
 | https://github.com/raybellis/evldns | 50,570 | 1.9 | C library |
-| https://github.com/tjfontaine/node-dns | 35,042 | 2.8 | a.k.a. "native-dns" |
-| https://github.com/trevoro/node-namedd <br>or the fork<br>https://github.com/kaija/dns-express | 24,300 | 4.1 |
-| https://github.com/jhs/dnsd | 18,000 | 5.7 | |
+| https://github.com/tjfontaine/node-dns <br>(published to npm as `native-dns`)| 35,042 | 2.8 | Working. No longer maintained. Many forks exist. |
+| https://github.com/trevoro/node-named <br>or the fork<br>https://github.com/kaija/dns-express | 24,300 | 4.1 | Some bugs and not a lot of maintenance activity.
+| https://github.com/jhs/dnsd | 18,000 | 5.7 | Working and simple, but doesn't appear to be maintained. |
 | https://github.com/chjj/bns | 12,900 | 6.9 | Not fully working |
 
+## To-Do List and Technical Details
+
+* There is no TCP fallback support.
+* I haven't looked yet if the truncation flag is set automatically on overflow.
+* Tests! I've been manually testing with `dig` and `dnsperf`.
+* DNSSEC - the flags are here for it, but I've never used it and don't know what
+  a full implementation looks like.
 
 ## History
 
-Forked from skampler/ndns (gone but published to npm), which was forked from
-[jsjohnst/ndns](https://github.com/jsjohnst/ndns) with some changes found in
-[atrniv/ndns](https://github.com/atrniv/ndns). Significant changes:
+As far as I can tell... the original source of this was
+[jsjohnst/ndns](https://github.com/jsjohnst/ndns). The [`ndns` module published
+to npm](https://www.npmjs.com/package/ndns) is from someone named "skmplr" or
+"skampler" (can't find their source repo). The fork at
+[atrniv/ndns](https://github.com/atrniv/ndns) has some changes to the original
+source.
+
+This module pulls from all three, and has some additional significant changes:
+
 * Code organization, ES6-ification, JSDoc.
   * Split code into separate files, following the organization of libbind.
   * Restored some of the names back to the original ones used in libbind (e.g.
@@ -207,4 +261,5 @@ Forked from skampler/ndns (gone but published to npm), which was forked from
   * `client.request` now accepts a callback. While you can still listen to the
     `"response"` event on the client, I'm not sure what the utility would be.
     Might remove that functionality.
+  * Don't make globals.
 * Docs and examples updated.
