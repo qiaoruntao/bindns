@@ -26,13 +26,12 @@ An example DNS server which responds with a "Hello World" TXT record:
 
 ```js
 const ndns = require('ndns');
-
-ndns.createServer('udp4', (req, res) => {
+const server = new ndns.Server('udp4', (req, res) => {
 	res.addRR(ndns.ns_sect.an, req.q[i].name, ndns.ns_type.txt, ndns.ns_class.in, 3600, "hello, world");
 	res.send();
-}).bind(5300);
-
-console.log("Server running at 0.0.0.0:5300")
+});
+server.on("listening", () => console.log("Server running at 0.0.0.0:5300"));
+server.bind(5300);
 ```
 
 ## API
