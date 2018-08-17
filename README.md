@@ -19,16 +19,16 @@ This module isn't published to npm yet, so install it from github:
 An example DNS server which responds with a "Hello World" TXT record:
 
 ```js
-const ndns = require("bindns");
+const bindns = require("bindns");
 
-const server = new ndns.Server("udp4", (req, res) => {
+const server = new bindns.Server("udp4", (req, res) => {
     res.header.aa = 1; // Authoritative for this zone.
-    res.header.rcode = ndns.ns_rcode.noerror; // NOERROR response code
+    res.header.rcode = bindns.ns_rcode.noerror; // NOERROR response code
     res.addRR(
-        ndns.ns_sect.an,      // answer section
+        bindns.ns_sect.an,    // answer section
         req.question[0].name, // host name
-        ndns.ns_type.txt,     // TXT record
-        ndns.ns_class.in,     // IN
+        bindns.ns_type.txt,   // TXT record
+        bindns.ns_class.in,   // IN
         3600,                 // TTL
         "hello, world"        // data
     );
@@ -93,13 +93,14 @@ ServerRequest {
 })
 ```
 
-There are several enums that you need to construct a response, including the
+There are several **enums** that you need to construct a response, including the
 common ones listed below. See lib/nameser.js for the full list.
 
 * `ns_rcode` - Response codes
 * `ns_sect` - Section constants
 * `ns_class` - Values for the `class` field
-* `ns_type` - Values for the `type` field
+* `ns_type` - Values for the `type` field. To convert an `ns_type` number to its
+  corresponding string, use `ns_type_str(ns_type_t)`.
 * `ns_flag` - Flag constants
 
 ### ndns.Server
