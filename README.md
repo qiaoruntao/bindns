@@ -230,7 +230,7 @@ Check out https://github.com/zbjornson/node-dnsperf for benchmarking.
 
 * There is no TCP fallback support.
 * I haven't looked yet if the truncation flag is set automatically on overflow.
-* Tests! I've been manually testing with `dig` and `dnsperf`.
+* Improve test suite (see test.js for info).
 * DNSSEC - the flags are here for it, but I've never used it and don't know what
   a full implementation looks like.
 
@@ -259,8 +259,10 @@ This module pulls from all three, and has some additional significant changes:
   * Some typos ("authorative" -> "authoritative", "buffer.Length" ->
     "buffer.length")
   * `ClientRequest` sets an ID automatically.
+  * `ClientRequest` increments `qdcount` automatically when adding a question.
   * `client.request` now accepts a callback. While you can still listen to the
     `"response"` event on the client, I'm not sure what the utility would be.
     Might remove that functionality.
   * Don't make globals.
+  * Fix possible infinite loop (https://github.com/primitybio/bindns/issues/1).
 * Docs and examples updated.
