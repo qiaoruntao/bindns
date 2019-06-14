@@ -4,8 +4,8 @@ const BIND_PORT = 53;
 
 const {ns_sect, ns_type, ns_class} = ndns;
 
-server.on("request", (req, res) =>{
-    if (req.q.length > 0) {
+server.on("request", (req, res) => {
+    if (req.q && req.q.length > 0) {
         let name = req.q[0].name;
         if (name === ".") name = "";
 
