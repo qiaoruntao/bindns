@@ -209,7 +209,7 @@ An array of `MessageRR`s.
 
 This object is created by `client.request(port, host, callback)`.
 
-#### request.addQuestion(name, class, type)
+#### request.addQuestion(name, type, class)
 
 Sets the question.
 
