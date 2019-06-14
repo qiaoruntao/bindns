@@ -2,7 +2,7 @@ const ndns = require("../lib/ndns");
 const server = new ndns.Server("udp4");
 const client = new ndns.Client("udp4");
 
-const LOCAL_PORT = 5300;
+const LOCAL_PORT = 53;
 const REMOTE_HOST = "8.8.8.8";
 const REMOTE_PORT = 53;
 
@@ -11,20 +11,21 @@ server.on("request", (req, res) => {
         res.header.aa = c_res.header.aa;
         res.header.rcode = c_res.header.rcode;
 
-        // Copy the first answer:
-        const answer = c_res.answer[0];
-        res.addRR(ndns.ns_sect.an, answer.name, answer.type, answer.class, answer.ttl, ...answer.rdata);
-        res.send();
+        for (const answer of c_res.answer) {
+            res.addRR(ndns.ns_sect.an, answer.name, answer.type, answer.class, answer.ttl, ...answer.rdata);
+            // or res.answer.push(answer);
+        }
 
-        // Alternatively, you could use what might be consideredan internal API:
-        // for (const answer of c_res.answer) res.answer.push(answer);
-        // for (const authoritative of c_res.authoritative) res.authoritative.push(authoritative);
-        // for (const additional of c_res.additional) res.additional.push(additional);
+        for (const authoritative of c_res.authoritative) res.authoritative.push(authoritative);
+        for (const additional of c_res.additional) res.additional.push(additional);
+
+        res.send();
     });
 
     c_req.header.rd = 1; // Recursion desired
-    const question = req.question[0];
-    c_req.addQuestion(question.name, question.class, question.type);
+    for (const question of req.question) {
+        c_req.addQuestion(question.name, question.type, question.class);
+    }
     c_req.send();
 });
 
