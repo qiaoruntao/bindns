@@ -1,38 +1,36 @@
-"use strict";
-
 /** Default UDP Packet size */
-exports.NS_PACKETSZ = 512;
+export const NS_PACKETSZ = 512;
 /** Maximum domain name */
-exports.NS_MAXDNAME = 1025;
+export const NS_MAXDNAME = 1025;
 /** Maximum message size */
-exports.NS_MAXMSG = 65535;
+export const NS_MAXMSG = 65535;
 /** Maximum compressed domain name */
-exports.NS_MAXCDNAME = 255;
+export const NS_MAXCDNAME = 255;
 /** Maximum compressed domain label */
-exports.NS_MAXLABEL = 63;
+export const NS_MAXLABEL = 63;
 /** Bytes of fixed data in header */
-exports.NS_HFIXEDSZ = 12;
+export const NS_HFIXEDSZ = 12;
 /** Bytes of fixed data in query */
-exports.NS_QFIXEDSZ = 4;
+export const NS_QFIXEDSZ = 4;
 /** Bytes of fixed data in r record */
-exports.NS_RRFIXEDSZ = 10;
+export const NS_RRFIXEDSZ = 10;
 /** Bytes of data in a u_int32_t */
-exports.NS_INT32SZ = 4;
+export const NS_INT32SZ = 4;
 /** Bytes of data in a u_int16_t */
-exports.NS_INT16SZ = 2;
+export const NS_INT16SZ = 2;
 /** Bytes of data in a u_int8_t */
-exports.NS_INT8SZ = 1;
+export const NS_INT8SZ = 1;
 /** IPv4 T_A */
-exports.NS_INADDRSZ = 4;
+export const NS_INADDRSZ = 4;
 /** IPv6 T_AAAA */
-exports.NS_IN6ADDRSZ = 16;
+export const NS_IN6ADDRSZ = 16;
 /** Flag bits indicating name compression. */
-exports.NS_CMPRSFLGS = 0xc0;
+export const NS_CMPRSFLGS = 0xc0;
 /** For both UDP and TCP. */
-exports.NS_DEFAULTPORT = 53;
+export const NS_DEFAULTPORT = 53;
 
 /** Section constants */
-exports.ns_sect = {
+export const ns_sect = {
     /** Query: Question. */                             "qd": 0,
     /** Update: Zone. */                                "zn": 0,
     /** Query: Answer. */                               "an": 1,
@@ -44,7 +42,7 @@ exports.ns_sect = {
 };
 
 /** Flag constants */
-exports.ns_flag = {
+export const ns_flag = {
     /** Question/Response. */                           "qr": 0,
     /** Operation code. */                              "opcode": 1,
     /** Authoritative Answer. */                        "aa": 2,
@@ -59,7 +57,7 @@ exports.ns_flag = {
 };
 
 /** Currently defined opcodes. */
-exports.ns_opcode = {
+export const ns_opcode = {
     /** Standard query. */                              "query": 0,
     /** Inverse query (deprecated/unsupported). */      "iquery": 1,
     /** Name server status query (unsupported). */      "status": 2,
@@ -69,7 +67,7 @@ exports.ns_opcode = {
 };
 
 /** Currently defined response codes */
-exports.ns_rcode = {
+export const ns_rcode = {
     /** No error occured. */                            "noerror": 0,
     /** Format error. */                                "formerr": 1,
     /** Server failure. */                              "servfail": 2,
@@ -92,18 +90,18 @@ exports.ns_rcode = {
 };
 
 // BIND_UPDATE
-exports.ns_update_operation = {
+export const ns_update_operation = {
     "delete": 0,
     "add": 1,
     "max": 2,
 };
 
-exports.NS_TSIG_FUDGE = 300;
-exports.NS_TSIG_TCP_COUNT = 100;
-exports.NS_TSIG_ALG_HMAC_MD5 = "HMAC-MD5.SIG-ALG.REG.INT";
-exports.NS_TSIG_ERROR_NO_TSIG = -10,
-exports.NS_TSIG_ERROR_NO_SPACE = -11,
-exports.NS_TSIG_ERROR_FORMERR = -12,
+export const NS_TSIG_FUDGE = 300;
+export const NS_TSIG_TCP_COUNT = 100;
+export const NS_TSIG_ALG_HMAC_MD5 = "HMAC-MD5.SIG-ALG.REG.INT";
+export const NS_TSIG_ERROR_NO_TSIG = -10;
+export const NS_TSIG_ERROR_NO_SPACE = -11;
+export const NS_TSIG_ERROR_FORMERR = -12;
 
 /** @typedef {number} ns_type_t */
 
@@ -111,7 +109,7 @@ exports.NS_TSIG_ERROR_FORMERR = -12,
  * Currently defined type values for resources and queries.
  * @enum {ns_type_t}
  */
-exports.ns_type = {
+export const ns_type = {
     /** Cookie. */                                      "invalid": 0,
     /** Host address. */                                "a": 1,
     /** Authoritative server. */                        "ns": 2,
@@ -184,7 +182,7 @@ exports.ns_type = {
  * @param {number} type
  * @return {string}
  */
-exports.ns_type_str = function (type) {
+export const ns_type_str = function (type) {
     const types = exports.ns_type;
     for (const str in types) if (types[str] === type) return str.toUpperCase();
 };
@@ -195,7 +193,7 @@ exports.ns_type_str = function (type) {
  * Values for class field
  * @enum {ns_class_t}
  */
-exports.ns_class = {
+export const ns_class = {
     /** Cookie. */                                      "invalid": 0,
     /** Internet. */                                    "in": 1,
     /** unallocated/unsupported. */                     "2": 2,
@@ -208,14 +206,14 @@ exports.ns_class = {
 };
 
 // DNSSEC constants.
-exports.ns_key_types = {
+export const ns_key_types = {
     /** key type RSA/MD5 */                             "rsa": 1,
     /** Diffie Hellman */                               "dh": 2,
     /** Digital Signature Standard (MANDATORY) */       "dsa": 3,
     /** Private key type starts with OID */             "private": 4
 };
 
-exports.ns_cert_types = {
+export const ns_cert_types = {
     /** PKIX (X.509v3) */                               "pkix": 1,
     /** SPKI */                                         "spki": 2,
     /** PGP */                                          "pgp": 3,
@@ -249,7 +247,18 @@ const ns_flagdata = [
  * This structure is intended to be opaque to all but ns_parse.c, thus the
  * leading _'s on the member names. Use the accessor functions, not the _'s.
  */
-exports.ns_msg = class ns_msg {
+export class ns_msg {
+    private _buf: any;
+    private _msg: any;
+    private _eom: any;
+    _id: any;
+    _flags: any;
+    private _counts: any;
+    private _sections: any;
+    private _sect: any;
+    private _rrnum: any;
+    private _msg_ptr: any;
+
     constructor() {
         this._buf = null; // not in original
         this._msg = null;
@@ -284,13 +293,17 @@ exports.ns_msg = class ns_msg {
             return (this._flags & ns_flagdata[flag].mask) >> ns_flagdata[flag].shift;
         return 0;
     }
-};
+}
 
 /**
  * This is a newmsg handle, used when constructing new messages with
  * ns_newmsg_init, et al.
  */
-exports.ns_newmsg = class ns_newmsg {
+export class ns_newmsg {
+    private msg: ns_msg;
+    private dnptrs: unknown[];
+    private lastdnptr: unknown;
+
     constructor() {
         this.msg = new exports.ns_msg();
         this.dnptrs = new Array(25);
@@ -310,9 +323,17 @@ exports.ns_newmsg = class ns_newmsg {
 /**
  * A parsed record, using uncompressed network binary names.
  */
-exports.ns_rr2 = class ns_rr2 {
+export class ns_rr2 {
+    private nname: Buffer;
+    private nnamel: unknown;
+    private type: unknown;
+    private rr_class: unknown;
+    private ttl: unknown;
+    private rdlength: unknown;
+    private rdata: unknown;
+
     constructor() {
-        this.nname = Buffer.alloc(exports.NS_MAXDNAME);
+        this.nname = Buffer.alloc(NS_MAXDNAME);
         this.nnamel = 0;
         this.type = 0;
         this.rr_class = 0;
