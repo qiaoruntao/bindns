@@ -222,7 +222,7 @@ Sends the response.
 
 Client for making DNS lookup requests
 
-See [examples/simple-client.js](examples/simple-client.js) for an example usage.
+See [examples/simple-client.ts](examples/simple-client.ts) for an example usage.
 
 > ```ts
 > new Client(type: "udp4"|"udp6" = "udp4", responseListener?: (res: ClientResponse) => void)

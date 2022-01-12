@@ -18,7 +18,7 @@ project adheres to [Semantic Versioning](http://semver.org/).
   This changes the default from no timeout to 10 seconds. Timeouts are indicated
   by an error passed as the first argument to the request callback, or by
   emitting an "error" event if there is no callback.
-* Add simple client request example (examples/simple-client.js).
+* Add simple client request example (examples/simple-client.ts).
 * Add `getRcodeError` convenience function to translate RCODEs to readable error
   messages.
 ### Fixed

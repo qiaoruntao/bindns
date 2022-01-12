@@ -4,9 +4,7 @@
 /**
  * An example of making an A request for "nodejs.org".
  */
-
-const bindns = require("lib/ndns.ts");
-
+import * as bindns from "../lib/ndns";
 // Set up the client.
 const client = new bindns.Client();
 client.on("error", console.error);
@@ -16,7 +14,7 @@ client.bind();
 // To specify a timeout, use an options object:
 // client.request({port: 53, address: "8.8.8.8", timeout: 5000}, (err, res) => ...
 const req = client.request(53, "8.8.8.8", (err, res) => {
-    // Currently only happens if the request times out.
+    // Currently, only happens if the request times out.
     if (err)
         throw err;
 

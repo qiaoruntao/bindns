@@ -12,8 +12,6 @@ import {
     ns_type,
     ns_type_str
 } from "./nameser";
-
-
 import {MessageHeader, MessageQuestion, MessageRR} from "./Messages";
 
 import {ns_name_ntop, ns_name_pton} from "./ns_name";
@@ -25,14 +23,20 @@ import {ns_initparse, ns_parserr2} from "./ns_parse";
 import {ns_rdata_pack, ns_rdata_unpack} from "./ns_rdata";
 import {Socket} from "dgram";
 
-exports.ns_class = ns_class;
-exports.ns_sect = ns_sect;
-exports.ns_type = ns_type;
-exports.ns_type_str = ns_type_str;
-exports.ns_flag = ns_flag;
-exports.ns_rcode = ns_rcode;
-exports.ns_opcode = ns_opcode;
-
+export {
+    ns_class,
+    ns_flag,
+    NS_MAXDNAME,
+    NS_MAXMSG,
+    ns_msg,
+    ns_newmsg,
+    ns_opcode,
+    ns_rcode,
+    ns_rr2,
+    ns_sect,
+    ns_type,
+    ns_type_str
+} from "./nameser";
 
 const debugLevel = Number.parseInt(process.env.NODE_DEBUG, 16);
 const debug = debugLevel & 0x4 ? x => console.error("NDNS: " + x) : () => {
@@ -50,7 +54,7 @@ const _newmsg = new ns_newmsg();
 const _rdata = Buffer.alloc(512);
 const _maxmsg = Buffer.alloc(NS_MAXMSG);
 
-class Message {
+export class Message {
     public header: MessageHeader;
     public question: unknown[];
     public answer: unknown[];
@@ -251,8 +255,6 @@ class Message {
     }
 }
 
-exports.Message = Message;
-
 /**
  * Faster version of buf.write(string, ...) for ASCII
  * @param {string} src
@@ -272,6 +274,7 @@ function asciiWrite(src, target, targetStart, sourceStart, sourceEnd) {
 class ServerRequest extends Message {
     private socket: Socket;
     private rinfo: unknown;
+
     constructor(socket, rinfo) {
         super();
         this.socket = socket;
@@ -281,8 +284,9 @@ class ServerRequest extends Message {
 
 class ServerResponse extends Message {
     private socket: Socket;
-    private rinfo: {port:number, address:string};
+    private rinfo: { port: number, address: string };
     private edns: { udp_payload_size: any; z: any; version: any; extended_rcode: any };
+
     constructor(req) {
         super();
         this.socket = req.socket;
@@ -322,7 +326,7 @@ class ServerResponse extends Message {
     }
 }
 
-class Server extends EventEmitter {
+export class Server extends EventEmitter {
     /**
      *
      * @param {"udp4"|"udp6"} type
@@ -363,13 +367,12 @@ class Server extends EventEmitter {
     }
 }
 
-exports.Server = Server;
-
 let id = 0;
 
-class ClientRequest extends Message {
+export class ClientRequest extends Message {
     private client: any;
     private rinfo: any;
+
     /**
      * Do not construct directly. Use `Client.request`.
      * @param {Client} client
@@ -410,19 +413,16 @@ class ClientRequest extends Message {
     }
 }
 
-exports.ClientRequest = ClientRequest;
-
-class ClientResponse extends Message {
+export class ClientResponse extends Message {
     private socket: Socket;
     private rinfo: any;
+
     constructor(socket, rinfo) {
         super();
         this.socket = socket;
         this.rinfo = rinfo;
     }
 }
-
-exports.ClientResponse = ClientResponse;
 
 /**
  * @typedef {Object} RequestOptions
@@ -441,7 +441,7 @@ const DEFAULT_TIMEOUT = 10000;
 /**
  * Client for making DNS lookup requests.
  *
- * See examples/simple-client.js for an example usage.
+ * See examples/simple-client.ts for an example usage.
  *
  * ## Events
  * * `"response"` - `(res: ClientResponse)` - Emitted on every response. You do
@@ -449,13 +449,13 @@ const DEFAULT_TIMEOUT = 10000;
  * * `"error"` - `(err: Error)` - Emitted when a request that does not have a
  *   response listener times out, or when the underlying socket has an error.
  */
-class Client extends EventEmitter {
+export class Client extends EventEmitter {
     /**
      * @param {"udp4"|"udp6"} [type]
      * @param {(res: ClientResponse) => void} [responseListener] Optional
      * listener for "response" events.
      */
-    constructor(type = "udp4", responseListener) {
+    constructor(type = "udp4", responseListener = undefined) {
         super();
         this.socket = dgram.createSocket(type);
         /** @type {Map<number, RequestCallback>} */
@@ -494,10 +494,11 @@ class Client extends EventEmitter {
         const cb = client.callbacks.get(request.header.id);
         client.callbacks.delete(request.header.id);
         const err = new Error("Request timed out.");
-        if (cb)
+        if (cb) {
             cb(err);
-        else
+        } else {
             this.emit("error", err, request);
+        }
     }
 
     /**
@@ -547,7 +548,7 @@ class Client extends EventEmitter {
      * @param {number} [port] If not specified or if 0, will bind a random port.
      * @param {string} [address] If not specified, will listen on all addresses.
      */
-    bind(port, address) {
+    bind(port = 0, address = "0.0.0.0") {
         this.socket.bind(port, address);
     }
 
@@ -557,10 +558,9 @@ class Client extends EventEmitter {
     }
 }
 
-exports.Client = Client;
-
 class DnsError extends Error {
     private code: any;
+
     constructor(code, message) {
         super(message);
         this.code = code;
@@ -572,7 +572,7 @@ class DnsError extends Error {
  * in RFC1035 and RFC6891 (EDNS) are handled.
  * @param {ClientResponse} response
  */
-function getRcodeError(response) {
+export function getRcodeError(response) {
     switch (response.header.rcode) {
         case 0:
             return;
@@ -596,8 +596,6 @@ function getRcodeError(response) {
             return new DnsError("UNKNOWN", `Unknown Error ${response.header.rcode}.`);
     }
 }
-
-exports.getRcodeError = getRcodeError;
 
 /**
  * Debugging utility to print part of packet in hex.
