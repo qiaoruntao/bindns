@@ -1,5 +1,5 @@
 import {ns_name_ntop, ns_name_unpack} from "./ns_name";
-import {_dname, _string, hexvalue} from "./ns_rdata";
+import {_dname, _string, hexValueList} from "./ns_rdata";
 
 export class RDataParser {
     public msg: Buffer;
@@ -61,22 +61,22 @@ export class RDataParser {
         if (this.consume(16)) {
             const {msg, rdata} = this;
             const item = [
-                hexvalue[msg[rdata - 16]] +
-                hexvalue[msg[rdata - 15]],
-                hexvalue[msg[rdata - 14]] +
-                hexvalue[msg[rdata - 13]],
-                hexvalue[msg[rdata - 12]] +
-                hexvalue[msg[rdata - 11]],
-                hexvalue[msg[rdata - 10]] +
-                hexvalue[msg[rdata - 9]],
-                hexvalue[msg[rdata - 8]] +
-                hexvalue[msg[rdata - 7]],
-                hexvalue[msg[rdata - 6]] +
-                hexvalue[msg[rdata - 5]],
-                hexvalue[msg[rdata - 4]] +
-                hexvalue[msg[rdata - 3]],
-                hexvalue[msg[rdata - 2]] +
-                hexvalue[msg[rdata - 1]]
+                hexValueList[msg[rdata - 16]] +
+                hexValueList[msg[rdata - 15]],
+                hexValueList[msg[rdata - 14]] +
+                hexValueList[msg[rdata - 13]],
+                hexValueList[msg[rdata - 12]] +
+                hexValueList[msg[rdata - 11]],
+                hexValueList[msg[rdata - 10]] +
+                hexValueList[msg[rdata - 9]],
+                hexValueList[msg[rdata - 8]] +
+                hexValueList[msg[rdata - 7]],
+                hexValueList[msg[rdata - 6]] +
+                hexValueList[msg[rdata - 5]],
+                hexValueList[msg[rdata - 4]] +
+                hexValueList[msg[rdata - 3]],
+                hexValueList[msg[rdata - 2]] +
+                hexValueList[msg[rdata - 1]]
             ].join(":");
             this.nrdata.push(item);
         }

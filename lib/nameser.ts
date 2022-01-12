@@ -179,19 +179,18 @@ export const ns_type = {
 /**
  * Returns the type (string) for the `type` (number).
  * This function is not fast. It could be made into an O(1) if needed.
- * @param {number} type
- * @return {string}
  */
-export const ns_type_str = function (type) {
-    const types = exports.ns_type;
-    for (const str in types) if (types[str] === type) return str.toUpperCase();
+export const ns_type_str = function (type: number): string {
+    const types = ns_type;
+    for (const key in types) {
+        if (types[key] === type) {
+            return key.toUpperCase();
+        }
+    }
 };
-
-/** @typedef {number} ns_class_t */
 
 /**
  * Values for class field
- * @enum {ns_class_t}
  */
 export const ns_class = {
     /** Cookie. */                                      "invalid": 0,

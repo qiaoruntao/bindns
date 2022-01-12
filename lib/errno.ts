@@ -2,9 +2,8 @@
 let errno_val = 0;
 /**
  * Gets/sets the "global" `errno`.
- * @param {number} v
  */
-export const errno = function (v) {
+export const errno = function (v: number) {
     if (v === undefined) return errno_val;
     errno_val = v;
 };

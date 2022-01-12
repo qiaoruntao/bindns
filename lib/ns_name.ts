@@ -31,19 +31,14 @@ const digitvalue = [
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 256
 ];
 
-/**
- * @typedef {{base: number, len: number}} map_t
- */
+export type map_t = { base: number, len: number };
 
 /**
  * Convert an encoded domain name to printable ascii as per RFC1035. The root is
  * returned as ".". All other domains are returned in non absolute form.
- * @param {Buffer} src
- * @param {Buffer} dst
- * @param {number} dstsiz
  * @return {number} Number of bytes written to buffer, or -1 (with errno set).
  */
-export function ns_name_ntop(src, dst, dstsiz) {
+export function ns_name_ntop(src: Buffer, dst: Buffer, dstsiz: number): number {
     let cp = 0;
     let dn = 0;
     const eom = dstsiz;
@@ -136,27 +131,20 @@ export function ns_name_ntop(src, dst, dstsiz) {
 /**
  * Convert a ascii string into an encoded domain name as per RFC1035. Enforces
  * label and domain length limits.
- * @param {Buffer} src
- * @param {Buffer} dst
- * @param {number} dstsiz
  * @return {number} -1 if it fails, 1 if string was fully qualified, 0 if string
  * was not fully qualified.
  */
-export function ns_name_pton(src, dst, dstsiz) {
+export function ns_name_pton(src: Buffer, dst: Buffer, dstsiz: number): number {
     return ns_name_pton2(src, dst, dstsiz, null);
 }
 
 /**
  * Convert a ascii string into an encoded domain name as per RFC1035. Enforces
  * label and domain length limits. Side effect: fills in *dstlen (if non-NULL).
- * @param {Buffer} src
- * @param {Buffer} dst
- * @param {number} dstsiz
- * @param {Ptr} dstlenp
  * @return {number} -1 if it fails, 1 if string was fully qualified, 0 if string
  * was not fully qualified.
  */
-export function ns_name_pton2(src, dst, dstsiz, dstlenp) {
+export function ns_name_pton2(src: Buffer, dst: Buffer, dstsiz: number, dstlenp: Ptr<number>): number {
     let c, n;
     let cp;
     let e = 0;
@@ -290,11 +278,8 @@ export function ns_name_pton2(src, dst, dstsiz, dstlenp) {
 /**
  * Returns the position of the first occurrence of `c` in the null-terminated
  * string `src`.
- * @param {Buffer} src
- * @param {number} off
- * @param {number} c
  */
-function strchr(src, off, c) {
+function strchr(src: Buffer, off: number, c: number) {
     while (off < src.length && src[off] !== 0) {
         if (src[off] === c) return off;
         off++;
@@ -304,29 +289,18 @@ function strchr(src, off, c) {
 
 /**
  * Unpack a domain name from a message, source may be compressed.
- * @param {Buffer} msg
- * @param {number} offset
- * @param {number} len
- * @param {Buffer} dst
- * @param {number} dstsiz
  * @return {number} -1 if it fails, or consumed octets if it succeeds.
  */
-export function ns_name_unpack(msg, offset, len, dst, dstsiz) {
+export function ns_name_unpack(msg: Buffer, offset: number, len: number, dst: Buffer, dstsiz: number): number {
     return ns_name_unpack2(msg, offset, len, dst, dstsiz, null);
 }
 
 /**
  * Unpack a domain name from a message, source may be compressed. Side effect:
  * fills in *dstlen (if non-NULL).
- * @param {Buffer} msg
- * @param {number} offset
- * @param {number} len
- * @param {Buffer} dst
- * @param {number} dstsiz
- * @param {Ptr} dstlenp
  * @return {number} -1 if it fails, or consumed octets if it succeeds.
  */
-export function ns_name_unpack2(msg, offset, len, dst, dstsiz, dstlenp) {
+export function ns_name_unpack2(msg: Buffer, offset: number, len: number, dst: Buffer, dstsiz: number, dstlenp: Ptr<number>): number {
     let n, l;
 
     let llen = -1;
@@ -405,11 +379,11 @@ export function ns_name_unpack2(msg, offset, len, dst, dstsiz, dstlenp) {
  * Side effects: The list of pointers in dnptrs is updated for labels inserted
  * into the message as we compress the name. If `dnptr` is `NULL`, we don't try
  * to compress names. If `lastdnptr` is `NULL`, we don't update the list.
- * @param {Buffer} src
- * @param {number} srcn
- * @param {Buffer} dst
- * @param {number} dstn
- * @param {number} dstsiz
+ * @param src
+ * @param srcn
+ * @param dst
+ * @param dstn
+ * @param dstsiz
  * @param {Array<number>} dnptrs An array of pointers to previous compressed
  * names. dnptrs[0] is a pointer to the beginning of the message. The array ends
  * with `NULL`.
@@ -417,7 +391,7 @@ export function ns_name_unpack2(msg, offset, len, dst, dstsiz, dstlenp) {
  * `dnptrs`.
  * @return {number} Size of the compressed name, or -1.
  */
-export function ns_name_pack(src, srcn, dst, dstn, dstsiz, dnptrs, lastdnptr) {
+export function ns_name_pack(src: Buffer, srcn: number, dst: Buffer, dstn: number, dstsiz: number, dnptrs: number[], lastdnptr: number): number {
     /** @type {number} */
     let dstp;
     /** @type {number} */
@@ -525,14 +499,9 @@ export function ns_name_pack(src, srcn, dst, dstn, dstsiz, dnptrs, lastdnptr) {
 /**
  * Expand compressed domain name to presentation format. Note: root domain
  * returns as "." not "".
- * @param {Buffer} msg
- * @param {number} offset
- * @param {number} len
- * @param {Buffer} dst
- * @param {number} dstsiz
  * @return {number} Number of bytes read out of `src`, or -1 (with errno set).
  */
-export function ns_name_uncompress(msg, offset, len, dst, dstsiz) {
+export function ns_name_uncompress(msg: Buffer, offset: number, len: number, dst: Buffer, dstsiz: number): number {
     let n;
     const tmp = Buffer.alloc(NS_MAXCDNAME);
     if ((n = ns_name_unpack(msg, offset, len, tmp, tmp.length)) === -1) return -1;
@@ -542,12 +511,9 @@ export function ns_name_uncompress(msg, offset, len, dst, dstsiz) {
 
 /**
  * Advance `ptrptr` to skip over the compressed name it points at.
- * @param {Buffer} b
- * @param {Ptr} ptrptr
- * @param {number} eom
  * @return {number} 0 on success, -1 (with errno set) on failure.
  */
-export function ns_name_skip(b, ptrptr, eom) {
+export function ns_name_skip(b: Buffer, ptrptr: Ptr<number>, eom: number): number {
     let cp;
     let n;
     let l;
@@ -585,12 +551,8 @@ export function ns_name_skip(b, ptrptr, eom) {
  * Find the number of octets an nname takes up, including the root label. (This
  * is basically ns_name_skip() without compression-pointer support.) (NOTE: can
  * only return zero if passed-in namesiz argument is zero.)
- * @param {Buffer} b
- * @param {number} nname
- * @param {number} namesiz
- * @return {number}
  */
-export function ns_name_length(b, nname, namesiz) {
+export function ns_name_length(b: Buffer, nname: number, namesiz: number): number {
     const orig = nname;
     let n;
 
@@ -618,15 +580,9 @@ function strncasecmp(buf1, s1, buf2, s2, n) {
 
 /**
  * Compare two nnames for equality.
- * @param {Buffer} bufa
- * @param {number} a
- * @param {number} as
- * @param {Buffer} bufb
- * @param {number} b
- * @param {number} bs
  * @return {number} Return -1 on error (setting errno).
  */
-export function ns_name_eq(bufa, a, as, bufb, b, bs) {
+export function ns_name_eq(bufa: Buffer, a: number, as: number, bufb: Buffer, b: number, bs: number): number {
     const ae = a + as, be = b + bs;
     let ac, bc;
     while (ac = bufa[a], bc = bufb[b], ac !== 0 && bc !== 0) {
@@ -642,25 +598,20 @@ export function ns_name_eq(bufa, a, as, bufb, b, bs) {
             bufb, ++b, ac) !== 0) {
             return 0;
         }
-        a += ac, b += bc;
+        a += ac;
+        b += bc;
     }
     return Number(ac === 0 && bc === 0);
 }
 
 /**
  * Is domain "A" owned by (at or below) domain "B"?
- * @param {Buffer} bufa
- * @param {map_t} mapa
- * @param {number} an
- * @param {Buffer} bufb
- * @param {map_t} mapb
- * @param {number} bn
- * @return {number}
  */
-export function ns_name_owned(bufa, mapa, an, bufb, mapb, bn) {
+export function ns_name_owned(bufa: Buffer, mapa: map_t, an: number, bufb: Buffer, mapb: map_t, bn: number): number {
     // If A is shorter, it cannot be owned by B.
-    if (an < bn)
+    if (an < bn) {
         return 0;
+    }
 
     // If they are unequal before the length of the shorter, A cannot...
     let a = 0, b = 0;
@@ -669,8 +620,10 @@ export function ns_name_owned(bufa, mapa, an, bufb, mapb, bn) {
             strncasecmp(bufa, mapa[a].base, bufb, mapb[b].base, mapa[a].len)) {
             return 0;
         }
-        a++ , an--;
-        b++ , bn--;
+        a++;
+        an--;
+        b++;
+        bn--;
     }
 
     // A might be longer or not, but either way, B owns it.
@@ -679,14 +632,9 @@ export function ns_name_owned(bufa, mapa, an, bufb, mapb, bn) {
 
 /**
  * Build an array of <base, len> tuples from an nname, top-down order.
- * @param {Buffer} b
- * @param {number} nname
- * @param {number} namelen
- * @param {*} map `ns_namemap_t`
- * @param {number} mapsize
  * @return {number} the number of tuples (labels) thus discovered.
  */
-export function ns_name_map(b, nname, namelen, map, mapsize) {
+export function ns_name_map(b: Buffer, nname: number, namelen: number, map: any, mapsize: number): number {
     const n = b[nname++];
     namelen--;
 
@@ -725,24 +673,18 @@ export function ns_name_map(b, nname, namelen, map, mapsize) {
 
     map.buf = b;
     /* we're on our way back up-stack, store current map data */
-    /** @type {map_t} */
-    const mapl = {
+    map[l] = {
         base: nname,
         len: n
     };
-    map[l] = mapl;
     return l + 1;
 }
 
 /**
  * Count the number of labels in a domain name. Root counts, so COM. has two.
  * This is to make the result comparable to the result of ns_name_map().
- * @param {*} b
- * @param {*} nname
- * @param {number} namesiz
- * @return {number}
  */
-export function ns_name_labels(b, nname, namesiz) {
+export function ns_name_labels(b: any, nname: any, namesiz: number): number {
     let ret = 0;
     let n;
 
@@ -765,11 +707,8 @@ export function ns_name_labels(b, nname, namesiz) {
 /**
  * Thinking in noninternationalized USASCII (per the DNS spec), is the character
  * special ("in need to quoting")?
- * @param {number} ch
- * @return {boolean}
- * @private
  */
-function special(ch) {
+function special(ch: number): boolean {
     switch (ch) {
         case 0x22: /* """ */
         case 0x2E: /* "." */
@@ -788,24 +727,21 @@ function special(ch) {
 /**
  * Thinking in noninternationalized USASCII (per the DNS spec), is this
  * character visible and not a space when printed ?
- * @param {number} ch
- * @private
  */
-function printable(ch) {
+function printable(ch: number): boolean {
     return ch > 0x20 && ch < 0x7F;
 }
 
 /**
  * Thinking in noninternationalized USASCII (per the DNS spec), conver this
  * character to lower case if it's upper case.
- * @param {number} ch
- * @return {number}
- * @private
  */
-function mklower(ch) {
-    if (ch >= 0x41 && ch <= 0x5A)
+function mklower(ch: number): number {
+    if (ch >= 0x41 && ch <= 0x5A) {
         return ch + 0x20;
-    return ch;
+    } else {
+        return ch;
+    }
 }
 
 /**
@@ -821,7 +757,7 @@ function mklower(ch) {
  * @return {number} offset into msg if found, or -1.
  * @private
  */
-function dn_find(src, domain, msg, dnptrs, ndnptr, lastdnptr) {
+function dn_find(src: Buffer, domain: number, msg: Buffer, dnptrs: ReadonlyArray<number>, ndnptr: number, lastdnptr: number): number {
     /** @type {number} */
     let dn;
     /** @type {number} */
@@ -892,15 +828,8 @@ function dn_find(src, domain, msg, dnptrs, ndnptr, lastdnptr) {
 
 /**
  * @todo This diverges heavily from libbind-6.0
- * @param {*} b
- * @param {Ptr} cpp
- * @param {*} d
- * @param {*} dn
- * @param {number} eom
- * @return {number}
- * @private
  */
-function decode_bitstring(b, cpp, d, dn, eom) {
+function decode_bitstring(b: any, cpp: Ptr<number>, d: any, dn: any, eom: number): number {
     let cp = cpp.get();
     let blen, plen;
 
@@ -933,7 +862,7 @@ function decode_bitstring(b, cpp, d, dn, eom) {
  * @return {number}
  * @private
  */
-function encode_bitstring(src, bp, end, labelp, dst, dstp, eom) {
+function encode_bitstring(src: any, bp: Ptr<number>, end: any, labelp: Ptr<number>, dst: any, dstp: Ptr<number>, eom: any): number {
     let afterslash = 0;
     let cp = bp.get();
     let tp;
@@ -945,14 +874,19 @@ function encode_bitstring(src, bp, end, labelp, dst, dstp, eom) {
     beg_blen = end_blen = null;
 
     // a bitstring must contain at least two bytes
-    if (end - cp < 2)
+    if (end - cp < 2) {
         return EINVAL;
+    }
 
     // currently, only hex strings are supported
-    if (src[cp++] !== 120) // "x"
+    // "x"
+    if (src[cp++] !== 120) {
         return EINVAL;
-    if (!isxdigit(src[cp] & 0xff)) // reject "\[x/BLEN]"
+    }
+    // reject "\[x/BLEN]"
+    if (!isxdigit(src[cp] & 0xff)) {
         return EINVAL;
+    }
 
     let done = false;
     for (tp = dstp.get() + 1; cp < end && tp < eom; cp++) {
@@ -966,8 +900,9 @@ function encode_bitstring(src, bp, end, labelp, dst, dstp, eom) {
                     // if (*end_blen !== 93) // ']'
                     //     return EINVAL;
                 }
-                if (count)
+                if (count) {
                     dst[tp++] = value << 4 & 0xff;
+                }
                 cp++; // skip "]"
                 done = true;
                 break;
@@ -976,10 +911,10 @@ function encode_bitstring(src, bp, end, labelp, dst, dstp, eom) {
                 break;
             default:
                 if (afterslash) {
-                    if (!isxdigit(c & 0xff))
+                    if (!isxdigit(c & 0xff)) {
                         return EINVAL;
+                    }
                     if (beg_blen === null) {
-
                         if (c === 48) { // '0'
                             // blen never begins with 0
                             return EINVAL;
@@ -987,14 +922,16 @@ function encode_bitstring(src, bp, end, labelp, dst, dstp, eom) {
                         beg_blen = cp;
                     }
                 } else {
-                    if (!isxdigit(c & 0xff))
+                    if (!isxdigit(c & 0xff)) {
                         return EINVAL;
+                    }
                     value <<= 4;
                     value += digitvalue[c];
                     count += 4;
                     tbcount += 4;
-                    if (tbcount > 256)
+                    if (tbcount > 256) {
                         return EINVAL;
+                    }
                     if (count === 8) {
                         dst[tp++] = value;
                         count = 0;
@@ -1007,23 +944,28 @@ function encode_bitstring(src, bp, end, labelp, dst, dstp, eom) {
         }
     }
     // done:
-    if (cp >= end || tp >= eom)
+    if (cp >= end || tp >= eom) {
         return EMSGSIZE;
+    }
     // bit length validation:
     // If a <length> is present, the number of digits in the <bit-data> MUST be
     // just sufficient to contain the number of bits specified by the <length>.
     // If there are insufficient bits in a final hexadecimal or octal digit,
     // they MUST be zero. RFC2673, Section 3.2
     if (blen && blen > 0) {
-        if ((blen + 3 & ~3) !== tbcount)
+        if ((blen + 3 & ~3) !== tbcount) {
             return EINVAL;
+        }
         const traillen = tbcount - blen; // between 0 and 3
-        if ((value << 8 - traillen & 0xFF) !== 0)
+        if ((value << 8 - traillen & 0xFF) !== 0) {
             return EINVAL;
-    } else
+        }
+    } else {
         blen = tbcount;
-    if (blen === 256)
+    }
+    if (blen === 256) {
         blen = 0;
+    }
 
     // encode the type and the significant bit fields
     src[labelp.get()] = DNS_LABELTYPE_BITSTRING;
@@ -1054,7 +996,7 @@ function labellen(b, off) {
     return l;
 }
 
-function isxdigit(ch) {
+function isxdigit(ch: number): boolean {
     return ch >= 48 && ch <= 57
         || ch >= 97 && ch <= 102
         || ch >= 65 && ch <= 70;
@@ -1066,7 +1008,7 @@ function isxdigit(ch) {
  * @param {number} off Byte offset to start decoding at.
  * @param {number} base
  */
-function strtol(b, off, base) {
+function strtol(b: Buffer, off: number, base: number): number {
     // todo: port from C
     return Number.parseInt(b.toString("ascii", off), base);
 }

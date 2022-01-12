@@ -56,10 +56,10 @@ const _maxmsg = Buffer.alloc(NS_MAXMSG);
 
 export class Message {
     public header: MessageHeader;
-    public question: unknown[];
-    public answer: unknown[];
-    public authoritative: unknown[];
-    public additional: unknown[];
+    public question: MessageQuestion[];
+    public answer: MessageRR[];
+    public authoritative: MessageRR[];
+    public additional: MessageRR[];
 
     constructor() {
         this.header = new MessageHeader();
@@ -78,7 +78,7 @@ export class Message {
      * @param {number} ttl
      * @param {Array<string>} info
      */
-    addRR(sect, name, type, klass, ttl, ...info) {
+    addRR(sect: number, name: string, type: number, klass: number, ttl: number, ...info: string[]) {
         let rr;
         if (sect === ns_sect.qd) {
             rr = new MessageQuestion(name, type, klass);
@@ -106,12 +106,10 @@ export class Message {
         }
     }
 
-    /**
-     * @param {Buffer} buf
-     */
-    parseOnce(buf) {
-        if (ns_initparse(buf, buf.length, _msg) === -1)
+    parseOnce(buf: Buffer) {
+        if (ns_initparse(buf, buf.length, _msg) === -1) {
             return false;
+        }
 
         this.header.id = _msg.getId();
         this.header.qr = _msg.getFlag(ns_flag.qr);
@@ -167,14 +165,10 @@ export class Message {
         return true;
     }
 
-    /**
-     * @param {Buffer} buf
-     * @param {number} bufsiz
-     * @private
-     */
-    writeOnce(buf, bufsiz) {
-        if (ns_newmsg_init(buf, bufsiz, _newmsg) === -1)
+    private writeOnce(buf: Buffer, bufsiz: number) {
+        if (ns_newmsg_init(buf, bufsiz, _newmsg) === -1) {
             return -1;
+        }
 
         _newmsg.setId(this.header.id);
         _newmsg.setFlag(ns_flag.qr, this.header.qr);
@@ -231,12 +225,7 @@ export class Message {
         return ns_newmsg_done(_newmsg);
     }
 
-    /**
-     * @param {dgram.Socket} socket
-     * @param {number} port
-     * @param {string} host
-     */
-    sendTo(socket, port, host) {
+    sendTo(socket: Socket, port: number, host: string) {
         let n;
         if ((n = this.writeOnce(_maxmsg, _maxmsg.length)) !== -1) {
             //hexdump (_maxmsg, n, 16);
@@ -257,13 +246,8 @@ export class Message {
 
 /**
  * Faster version of buf.write(string, ...) for ASCII
- * @param {string} src
- * @param {Buffer} target
- * @param {number} targetStart
- * @param {number} sourceStart
- * @param {number} sourceEnd
  */
-function asciiWrite(src, target, targetStart, sourceStart, sourceEnd) {
+function asciiWrite(src: string, target: Buffer, targetStart: number, sourceStart: number, sourceEnd: number) {
     const numBytes = sourceEnd - sourceStart;
     while (sourceStart < sourceEnd) {
         target[targetStart++] = src.charCodeAt(sourceStart++);
@@ -271,9 +255,9 @@ function asciiWrite(src, target, targetStart, sourceStart, sourceEnd) {
     return numBytes;
 }
 
-class ServerRequest extends Message {
-    private socket: Socket;
-    private rinfo: unknown;
+export class ServerRequest extends Message {
+    socket: Socket;
+    rinfo: Rinfo;
 
     constructor(socket, rinfo) {
         super();
@@ -282,17 +266,20 @@ class ServerRequest extends Message {
     }
 }
 
-class ServerResponse extends Message {
-    private socket: Socket;
-    private rinfo: { port: number, address: string };
+export type Rinfo = { port: number, address: string };
+
+export class ServerResponse extends Message {
+    private readonly socket: Socket;
+    private rinfo: Rinfo;
     private edns: { udp_payload_size: any; z: any; version: any; extended_rcode: any };
 
-    constructor(req) {
+    constructor(req: ServerRequest) {
         super();
         this.socket = req.socket;
         this.rinfo = req.rinfo;
         // edns
         for (let i = 0; i < req.answer.length; i++) {
+            // @ts-ignore
             const rr = req.rr[i];
             if (rr.type !== ns_type.opt)
                 continue;
@@ -326,13 +313,12 @@ class ServerResponse extends Message {
     }
 }
 
+export type UDP_TYPE = "udp4" | "udp6";
+export type RequestListener = (req: ServerRequest, res: ServerResponse) => void;
+
 export class Server extends EventEmitter {
-    /**
-     *
-     * @param {"udp4"|"udp6"} type
-     * @param {(req, res) => void} [requestListener]
-     */
-    constructor(type, requestListener = undefined) {
+
+    constructor(type: UDP_TYPE, requestListener?: RequestListener) {
         super();
         try {
             this.socket = dgram.createSocket(type);
@@ -358,7 +344,7 @@ export class Server extends EventEmitter {
         });
     }
 
-    bind(port, address = "127.0.0.1") {
+    bind(port: number, address: string = "127.0.0.1") {
         this.socket.bind(port, address);
     }
 
@@ -367,24 +353,28 @@ export class Server extends EventEmitter {
     }
 }
 
+/**
+ * @typedef {Object} RequestOptions
+ * @property {number} port
+ * @property {string} address IP address.
+ * @property {number} [timeout] Response timeout in milliseconds. Defaults to
+ * 10,000. Set to Infinity to disable.
+ */
+export type RequestOptions = { port: number, address: string, timeout: number };
+
 let id = 0;
 
 export class ClientRequest extends Message {
-    private client: any;
-    private rinfo: any;
+    private readonly client: Client;
+    private rinfo: RequestOptions;
 
     /**
      * Do not construct directly. Use `Client.request`.
-     * @param {Client} client
-     * @param {RequestOptions} rinfo
      */
-    constructor(client, rinfo) {
+    constructor(client: Client, rinfo: RequestOptions) {
         super();
-        /** @type {Client} */
         this.client = client;
-        /** @type {RequestOptions} */
         this.rinfo = rinfo;
-        /** @type {number} */
         this.header.id = id = ++id & 65535;
     }
 
@@ -395,7 +385,7 @@ export class ClientRequest extends Message {
      * @param {number} [qclass] Optional query class. Must be a value from
      * `bindns.ns_class`. Defaults to `in`.
      */
-    addQuestion(qname, qtype, qclass = ns_class.in) {
+    addQuestion(qname: string, qtype: number, qclass: number = ns_class.in) {
         const q = new MessageQuestion(qname, qtype, qclass);
         this.question.push(q);
         this.header.qdcount++;
@@ -424,18 +414,7 @@ export class ClientResponse extends Message {
     }
 }
 
-/**
- * @typedef {Object} RequestOptions
- * @property {number} port
- * @property {string} address IP address.
- * @property {number} [timeout] Response timeout in milliseconds. Defaults to
- * 10,000. Set to Infinity to disable.
- */
-
-/**
- * @typedef {(err: Error|null, res?: ClientResponse) => void} RequestCallback
- */
-
+export type RequestCallback = (err: Error | null, res?: ClientResponse) => void;
 const DEFAULT_TIMEOUT = 10000;
 
 /**
@@ -451,11 +430,9 @@ const DEFAULT_TIMEOUT = 10000;
  */
 export class Client extends EventEmitter {
     /**
-     * @param {"udp4"|"udp6"} [type]
-     * @param {(res: ClientResponse) => void} [responseListener] Optional
      * listener for "response" events.
      */
-    constructor(type = "udp4", responseListener = undefined) {
+    constructor(type: UDP_TYPE = "udp4", responseListener?: RequestListener) {
         super();
         this.socket = dgram.createSocket(type);
         /** @type {Map<number, RequestCallback>} */
@@ -477,8 +454,9 @@ export class Client extends EventEmitter {
                 clearTimeout(timeout);
                 this.timeouts.delete(id);
                 const cb = this.callbacks.get(id);
-                if (cb)
+                if (cb) {
                     cb(null, res);
+                }
                 this.emit("response", res);
             }
         });
@@ -487,10 +465,8 @@ export class Client extends EventEmitter {
 
     /**
      * internal
-     * @param {Client} client
-     * @param {ClientRequest} request
      */
-    _onTimeout(client, request) {
+    _onTimeout(client: Client, request: ClientRequest) {
         const cb = client.callbacks.get(request.header.id);
         client.callbacks.delete(request.header.id);
         const err = new Error("Request timed out.");
@@ -510,20 +486,19 @@ export class Client extends EventEmitter {
      * request(options: RequestOptions, cb: RequestCallback): ClientRequest;
      * ```
      *
-     * @param {number|Object} portOrOptions
-     * @param {string|(RequestCallback)} addressOrCb
-     * @param {RequestCallback} [cb]
      */
-    request(portOrOptions, addressOrCb, cb) {
+    request(portOrOptions: number | object, addressOrCb: string | RequestCallback, cb): ClientRequest {
         /** @type {RequestOptions} */
         let options;
         if (portOrOptions && typeof portOrOptions === "object" &&
             typeof addressOrCb === "function") {
             options = portOrOptions;
-            if (options.timeout != null && typeof options.timeout !== "number")
+            if (options.timeout != null && typeof options.timeout !== "number") {
                 throw new TypeError("timeout must be a number.");
-            if (!options.timeout)
+            }
+            if (!options.timeout) {
                 options.timeout = DEFAULT_TIMEOUT;
+            }
             cb = addressOrCb;
         } else if (typeof portOrOptions === "number" &&
             typeof addressOrCb === "string" &&
@@ -548,7 +523,7 @@ export class Client extends EventEmitter {
      * @param {number} [port] If not specified or if 0, will bind a random port.
      * @param {string} [address] If not specified, will listen on all addresses.
      */
-    bind(port = 0, address = "0.0.0.0") {
+    bind(port: number = 0, address: string = "0.0.0.0") {
         this.socket.bind(port, address);
     }
 
@@ -570,9 +545,8 @@ class DnsError extends Error {
 /**
  * Returns a descriptive error for the `RCODE` of the response. Only those codes
  * in RFC1035 and RFC6891 (EDNS) are handled.
- * @param {ClientResponse} response
  */
-export function getRcodeError(response) {
+export function getRcodeError(response: ClientResponse): DnsError {
     switch (response.header.rcode) {
         case 0:
             return;
@@ -604,7 +578,7 @@ export function getRcodeError(response) {
  * @param {number} width Octets per line
  * @return {string}
  */
-function hexdump(buf, length, width = 32) {
+function hexdump(buf: Buffer, length: number, width: number = 32): string {
     if (!Buffer.isBuffer(buf))
         throw new Error("argument must be buffer");
     let str = "\n";
