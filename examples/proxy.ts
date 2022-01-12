@@ -1,15 +1,13 @@
-"use strict";
-
 const ndns = require("../lib/ndns");
 const server = new ndns.Server("udp4");
 const client = new ndns.Client("udp4");
 
-const LOCAL_PORT = 53;
+const LOCAL_PORT = 5300;
 const REMOTE_HOST = "8.8.8.8";
 const REMOTE_PORT = 53;
 
-server.on("request", (req, res) => {
-    const c_req = client.request(REMOTE_PORT, REMOTE_HOST, (err, c_res) => {
+server.on("request", (req: any, res: any) => {
+    const c_req = client.request(REMOTE_PORT, REMOTE_HOST, (err: any, c_res: any) => {
         if (err) throw err;
         res.header.aa = c_res.header.aa;
         res.header.rcode = c_res.header.rcode;

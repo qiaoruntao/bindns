@@ -1,5 +1,5 @@
 //@ts-check
-"use strict";
+
 
 /**
  * An example of making an A request for "nodejs.org".

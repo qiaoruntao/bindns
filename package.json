@@ -1,7 +1,10 @@
 {
   "name": "bindns",
   "description": "Fast DNS library, server and client for Node.js based on libbind-6",
-  "keywords": ["dns", "libbind"],
+  "keywords": [
+    "dns",
+    "libbind"
+  ],
   "bugs": "https://github.com/primitybio/bindns/issues",
   "license": "ISC",
   "version": "0.2.0",
@@ -16,7 +19,10 @@
     "example": "examples"
   },
   "main": "lib/ndns.js",
-  "dependencies": {},
+  "dependencies": {
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  },
   "devDependencies": {
     "@types/node": "^10.7.1"
   }

@@ -1,10 +1,10 @@
-"use strict";
+
 
 /**
  * Tests ability of server and client to handle various types of requests by
  * proxying a list of dig commands to another server.
  *
- * In another terminal, run `node ./examples/proxy.js` first, and then run this.
+ * In another terminal, run `node ./examples/proxy.ts` first, and then run this.
  *
  * Currently this passes a test if the status is `NOERROR`. Better would be to
  * make the same query against the proxied server directly and make sure the
