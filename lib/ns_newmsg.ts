@@ -7,10 +7,8 @@ import {EMSGSIZE, ENODEV, errno} from "./errno";
 import {NS_HFIXEDSZ, NS_INT16SZ, NS_INT32SZ, ns_newmsg, NS_QFIXEDSZ, NS_RRFIXEDSZ, ns_sect, ns_type} from "./nameser";
 
 
-const {
-    ns_name_pack,
-    ns_name_skip
-} = require("./ns_name.js");
+import {ns_name_pack, ns_name_skip} from "./ns_name";
+
 
 // Faster version of arr.fill, for small fills.
 function fill(buf, val) {
@@ -24,7 +22,7 @@ function fill(buf, val) {
  * @param {number} bufsiz
  * @param {ns_newmsg} handle
  */
-function ns_newmsg_init(buf, bufsiz, handle) {
+export function ns_newmsg_init(buf, bufsiz, handle) {
     const msg = handle.msg;
     msg._buf = buf;
     msg._msg = null;
@@ -35,7 +33,7 @@ function ns_newmsg_init(buf, bufsiz, handle) {
     fill(msg._sections, 0);
     msg._sect = ns_sect.qd;
     msg._rrnum = 0;
-    msg._msg_ptr = 0 + NS_HFIXEDSZ;
+    msg._msg_ptr = NS_HFIXEDSZ;
 
     handle.dnptrs[0] = 0;
     handle.dnptrs[1] = null;
@@ -44,8 +42,6 @@ function ns_newmsg_init(buf, bufsiz, handle) {
     return 0;
 }
 
-exports.ns_newmsg_init = ns_newmsg_init;
-
 /**
  * Add a question (or zone, if it's an update) to a "newmsg" object.
  * @param {ns_newmsg} handle
@@ -53,7 +49,7 @@ exports.ns_newmsg_init = ns_newmsg_init;
  * @param {number} qtype
  * @param {number} qclass
  */
-function ns_newmsg_q(handle, qname, qtype, qclass) {
+export function ns_newmsg_q(handle, qname, qtype, qclass) {
     const msg = handle.msg;
     let t;
 
@@ -82,15 +78,13 @@ function ns_newmsg_q(handle, qname, qtype, qclass) {
     return 0;
 }
 
-exports.ns_newmsg_q = ns_newmsg_q;
-
 /** @typedef {number} ns_sect_t */
 /** @typedef {number} ns_type_t */
 
 /** @typedef {number} ns_class_t */
 
 /**
- * Add an RR to a "newmsg" object.
+ * Add an RR to a "wnewmsg" object.
  * @param {ns_newmsg} handle
  * @param {ns_sect_t} sect
  * @param {*} name
@@ -100,7 +94,7 @@ exports.ns_newmsg_q = ns_newmsg_q;
  * @param {number} rdlen
  * @param {Buffer} rdata
  */
-function ns_newmsg_rr(handle, sect, name, type, rr_class, ttl, rdlen, rdata) {
+export function ns_newmsg_rr(handle, sect, name, type, rr_class, ttl, rdlen, rdata) {
     const msg = handle.msg;
     let t;
 
@@ -139,9 +133,7 @@ function ns_newmsg_rr(handle, sect, name, type, rr_class, ttl, rdlen, rdata) {
     return 0;
 }
 
-exports.ns_newmsg_rr = ns_newmsg_rr;
-
-function ns_newmsg_done(handle) {
+export function ns_newmsg_done(handle) {
     const msg = handle.msg;
     let t = 0;
     msg._buf[t++] = msg._id >> 8;
@@ -160,9 +152,7 @@ function ns_newmsg_done(handle) {
     return msg._eom;
 }
 
-exports.ns_newmsg_done = ns_newmsg_done;
-
-const _ptr = new Ptr();
+const _ptr = new Ptr<number>(undefined);
 
 /**
  * Copy an RDATA, using compression pointers where RFC1035 permits.

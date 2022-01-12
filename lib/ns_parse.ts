@@ -6,14 +6,12 @@ import {EMSGSIZE, ENODEV, errno} from "./errno";
 
 import {NS_INT16SZ, NS_INT32SZ, ns_sect} from "./nameser";
 
-const {
-    ns_name_skip,
-    ns_name_unpack2
-} = require("./ns_name.js");
+import {ns_name_skip, ns_name_unpack2} from "./ns_name";
+
 
 function dn_skipname(buf, ptr, eom) {
     const saveptr = ptr;
-    const ptrptr = new Ptr(ptr);
+    const ptrptr = new Ptr<number>(ptr);
 
     if (ns_name_skip(buf, ptrptr, eom) === -1) {
         return -1;
@@ -22,7 +20,7 @@ function dn_skipname(buf, ptr, eom) {
     return ptrptr.get() - saveptr;
 }
 
-function ns_skiprr(buf, ptr, eom, section, count) {
+export function ns_skiprr(buf, ptr, eom, section, count) {
     const optr = ptr;
     for (let i = 0; i < count; i++) {
         let rdlength;
@@ -46,9 +44,7 @@ function ns_skiprr(buf, ptr, eom, section, count) {
     return ptr - optr;
 }
 
-exports.ns_skiprr = ns_skiprr;
-
-function ns_initparse(buf, buflen, handle) {
+export function ns_initparse(buf, buflen, handle) {
     let msg = 0;
     const eom = buflen;
     let i;
@@ -89,14 +85,11 @@ function ns_initparse(buf, buflen, handle) {
     return 0;
 }
 
-exports.ns_initparse = ns_initparse;
 
-
-function ns_parserr2(handle, section, rrnum, rr) {
+export function ns_parserr2(handle, section, rrnum, rr) {
     let b;
 
-    const tmp = section;
-    if (tmp < 0 || section >= ns_sect.max) {
+    if (section < 0 || section >= ns_sect.max) {
         errno(ENODEV);
         return -1;
     }
@@ -115,7 +108,7 @@ function ns_parserr2(handle, section, rrnum, rr) {
         handle._rrnum = rrnum;
     }
     // do the parse
-    const nnamelp = new Ptr();
+    const nnamelp = new Ptr<number>(undefined);
     b = ns_name_unpack2(handle._buf, handle._msg_ptr, handle._eom, rr.nname, rr.nname.length, nnamelp);
     if (b < 0) return -1;
     rr.nnamel = nnamelp.get();
@@ -156,8 +149,6 @@ function ns_parserr2(handle, section, rrnum, rr) {
     // all done
     return 0;
 }
-
-exports.ns_parserr2 = ns_parserr2;
 
 /**
  *

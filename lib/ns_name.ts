@@ -16,7 +16,7 @@ const digitvalue = [
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 16
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 32
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 48
-    0,   1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1, // 64
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1, // 64
     -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 80
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 96
     -1, 12, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 112
@@ -43,7 +43,7 @@ const digitvalue = [
  * @param {number} dstsiz
  * @return {number} Number of bytes written to buffer, or -1 (with errno set).
  */
-function ns_name_ntop(src, dst, dstsiz) {
+export function ns_name_ntop(src, dst, dstsiz) {
     let cp = 0;
     let dn = 0;
     const eom = dstsiz;
@@ -80,7 +80,7 @@ function ns_name_ntop(src, dst, dstsiz) {
                 errno(EINVAL);
                 return -1;
             }
-            const cpp = new Ptr(cp);
+            const cpp = new Ptr<number>(cp);
             if ((m = decode_bitstring(src, cpp, dst, dn, eom)) < 0) {
                 errno(EMSGSIZE);
                 return -1;
@@ -132,7 +132,6 @@ function ns_name_ntop(src, dst, dstsiz) {
     dst[dn] = 0;
     return dn;
 }
-exports.ns_name_ntop = ns_name_ntop;
 
 /**
  * Convert a ascii string into an encoded domain name as per RFC1035. Enforces
@@ -143,10 +142,9 @@ exports.ns_name_ntop = ns_name_ntop;
  * @return {number} -1 if it fails, 1 if string was fully qualified, 0 if string
  * was not fully qualified.
  */
-function ns_name_pton(src, dst, dstsiz) {
+export function ns_name_pton(src, dst, dstsiz) {
     return ns_name_pton2(src, dst, dstsiz, null);
 }
-exports.ns_name_pton = ns_name_pton;
 
 /**
  * Convert a ascii string into an encoded domain name as per RFC1035. Enforces
@@ -158,7 +156,7 @@ exports.ns_name_pton = ns_name_pton;
  * @return {number} -1 if it fails, 1 if string was fully qualified, 0 if string
  * was not fully qualified.
  */
-function ns_name_pton2(src, dst, dstsiz, dstlenp) {
+export function ns_name_pton2(src, dst, dstsiz, dstlenp) {
     let c, n;
     let cp;
     let e = 0;
@@ -176,9 +174,9 @@ function ns_name_pton2(src, dst, dstsiz, dstlenp) {
                     errno(EINVAL);
                     return -1;
                 }
-                const srcp = new Ptr(srcn);
-                const bpp = new Ptr(bp);
-                const labelp = new Ptr(label);
+                const srcp = new Ptr<number>(srcn);
+                const bpp = new Ptr<number>(bp);
+                const labelp = new Ptr<number>(label);
                 e = encode_bitstring(src, srcp, cp + 2, labelp, dst, bpp, eom);
                 if (e !== 0) {
                     errno(e);
@@ -288,7 +286,6 @@ function ns_name_pton2(src, dst, dstsiz, dstlenp) {
     }
     return 0;
 }
-exports.ns_name_pton2 = ns_name_pton2;
 
 /**
  * Returns the position of the first occurrence of `c` in the null-terminated
@@ -314,10 +311,9 @@ function strchr(src, off, c) {
  * @param {number} dstsiz
  * @return {number} -1 if it fails, or consumed octets if it succeeds.
  */
-function ns_name_unpack(msg, offset, len, dst, dstsiz) {
+export function ns_name_unpack(msg, offset, len, dst, dstsiz) {
     return ns_name_unpack2(msg, offset, len, dst, dstsiz, null);
 }
-exports.ns_name_unpack = ns_name_unpack;
 
 /**
  * Unpack a domain name from a message, source may be compressed. Side effect:
@@ -330,7 +326,7 @@ exports.ns_name_unpack = ns_name_unpack;
  * @param {Ptr} dstlenp
  * @return {number} -1 if it fails, or consumed octets if it succeeds.
  */
-function ns_name_unpack2(msg, offset, len, dst, dstsiz, dstlenp) {
+export function ns_name_unpack2(msg, offset, len, dst, dstsiz, dstlenp) {
     let n, l;
 
     let llen = -1;
@@ -402,7 +398,6 @@ function ns_name_unpack2(msg, offset, len, dst, dstsiz, dstlenp) {
         llen = srcn - offset;
     return llen;
 }
-exports.ns_name_unpack2 = ns_name_unpack2;
 
 /**
  * Pack domain name `domain` into `comp_dn`.
@@ -422,7 +417,7 @@ exports.ns_name_unpack2 = ns_name_unpack2;
  * `dnptrs`.
  * @return {number} Size of the compressed name, or -1.
  */
-function ns_name_pack(src, srcn, dst, dstn, dstsiz, dnptrs, lastdnptr) {
+export function ns_name_pack(src, srcn, dst, dstn, dstsiz, dnptrs, lastdnptr) {
     /** @type {number} */
     let dstp;
     /** @type {number} */
@@ -443,7 +438,8 @@ function ns_name_pack(src, srcn, dst, dstn, dstsiz, dnptrs, lastdnptr) {
     if (dnptrs !== null) {
         msg = dst;
         if (dnptrs[ndnptr++] !== null) {
-            for (cpp = 0; dnptrs[cpp] !== null; cpp++);
+            for (cpp = 0; dnptrs[cpp] !== null; cpp++) {
+            }
             // This evil body-less loop is as it appears in ns_name.c. -ZB
             lpp = cpp; // end of list to search
         }
@@ -525,7 +521,6 @@ function ns_name_pack(src, srcn, dst, dstn, dstsiz, dnptrs, lastdnptr) {
     }
     return dstp - dstn;
 }
-exports.ns_name_pack = ns_name_pack;
 
 /**
  * Expand compressed domain name to presentation format. Note: root domain
@@ -537,14 +532,13 @@ exports.ns_name_pack = ns_name_pack;
  * @param {number} dstsiz
  * @return {number} Number of bytes read out of `src`, or -1 (with errno set).
  */
-function ns_name_uncompress(msg, offset, len, dst, dstsiz) {
+export function ns_name_uncompress(msg, offset, len, dst, dstsiz) {
     let n;
     const tmp = Buffer.alloc(NS_MAXCDNAME);
     if ((n = ns_name_unpack(msg, offset, len, tmp, tmp.length)) === -1) return -1;
     if (ns_name_ntop(tmp, dst, dstsiz) === -1) return -1;
     return n;
 }
-exports.ns_name_uncompress = ns_name_uncompress;
 
 /**
  * Advance `ptrptr` to skip over the compressed name it points at.
@@ -553,7 +547,7 @@ exports.ns_name_uncompress = ns_name_uncompress;
  * @param {number} eom
  * @return {number} 0 on success, -1 (with errno set) on failure.
  */
-function ns_name_skip(b, ptrptr, eom) {
+export function ns_name_skip(b, ptrptr, eom) {
     let cp;
     let n;
     let l;
@@ -586,7 +580,6 @@ function ns_name_skip(b, ptrptr, eom) {
     ptrptr.set(cp);
     return 0;
 }
-exports.ns_name_skip = ns_name_skip;
 
 /**
  * Find the number of octets an nname takes up, including the root label. (This
@@ -597,7 +590,7 @@ exports.ns_name_skip = ns_name_skip;
  * @param {number} namesiz
  * @return {number}
  */
-function ns_name_length(b, nname, namesiz) {
+export function ns_name_length(b, nname, namesiz) {
     const orig = nname;
     let n;
 
@@ -613,7 +606,6 @@ function ns_name_length(b, nname, namesiz) {
     }
     return nname - orig;
 }
-exports.ns_name_length = ns_name_length;
 
 function strncasecmp(buf1, s1, buf2, s2, n) {
     for (let i = 0; i < n; i++) {
@@ -634,7 +626,7 @@ function strncasecmp(buf1, s1, buf2, s2, n) {
  * @param {number} bs
  * @return {number} Return -1 on error (setting errno).
  */
-function ns_name_eq(bufa, a, as, bufb, b, bs) {
+export function ns_name_eq(bufa, a, as, bufb, b, bs) {
     const ae = a + as, be = b + bs;
     let ac, bc;
     while (ac = bufa[a], bc = bufb[b], ac !== 0 && bc !== 0) {
@@ -654,7 +646,6 @@ function ns_name_eq(bufa, a, as, bufb, b, bs) {
     }
     return Number(ac === 0 && bc === 0);
 }
-exports.ns_name_eq = ns_name_eq;
 
 /**
  * Is domain "A" owned by (at or below) domain "B"?
@@ -666,7 +657,7 @@ exports.ns_name_eq = ns_name_eq;
  * @param {number} bn
  * @return {number}
  */
-function ns_name_owned(bufa, mapa, an, bufb, mapb, bn) {
+export function ns_name_owned(bufa, mapa, an, bufb, mapb, bn) {
     // If A is shorter, it cannot be owned by B.
     if (an < bn)
         return 0;
@@ -685,7 +676,6 @@ function ns_name_owned(bufa, mapa, an, bufb, mapb, bn) {
     // A might be longer or not, but either way, B owns it.
     return 1;
 }
-exports.ns_name_owned = ns_name_owned;
 
 /**
  * Build an array of <base, len> tuples from an nname, top-down order.
@@ -696,7 +686,7 @@ exports.ns_name_owned = ns_name_owned;
  * @param {number} mapsize
  * @return {number} the number of tuples (labels) thus discovered.
  */
-function ns_name_map(b, nname, namelen, map, mapsize) {
+export function ns_name_map(b, nname, namelen, map, mapsize) {
     const n = b[nname++];
     namelen--;
 
@@ -743,7 +733,6 @@ function ns_name_map(b, nname, namelen, map, mapsize) {
     map[l] = mapl;
     return l + 1;
 }
-exports.ns_name_map = ns_name_map;
 
 /**
  * Count the number of labels in a domain name. Root counts, so COM. has two.
@@ -753,7 +742,7 @@ exports.ns_name_map = ns_name_map;
  * @param {number} namesiz
  * @return {number}
  */
-function ns_name_labels(b, nname, namesiz) {
+export function ns_name_labels(b, nname, namesiz) {
     let ret = 0;
     let n;
 
@@ -772,7 +761,6 @@ function ns_name_labels(b, nname, namesiz) {
     }
     return ret + 1;
 }
-exports.ns_name_labels = ns_name_labels;
 
 /**
  * Thinking in noninternationalized USASCII (per the DNS spec), is the character
