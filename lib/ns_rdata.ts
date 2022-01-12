@@ -1,12 +1,12 @@
 import Ptr from "./Ptr";
 
-import copy from "./copy.ts";
+import copy from "./copy";
 
 import {EMSGSIZE, errno} from "./errno";
 
 import {NS_MAXDNAME, ns_type} from "./nameser";
 
-import {ns_name_ntop, ns_name_pton2, ns_name_unpack} from "./ns_name.ts";
+import {ns_name_ntop, ns_name_pton2, ns_name_unpack} from "./ns_name";
 
 
 const hexvalue = [
@@ -32,15 +32,21 @@ const hexvalue = [
 const _dname = Buffer.alloc(NS_MAXDNAME);
 const _string = Buffer.alloc(NS_MAXDNAME);
 // Likewise:
-const _ptr = new Ptr();
+const _ptr = new Ptr<number>(undefined);
 
 class RDataParser {
+    public msg: Buffer;
+    public eom: number;
+    public rdata: number;
+    public rdlen: number;
+    public nrdata: unknown[];
+    public active: boolean;
+
     constructor() {
         this.msg = null;
         this.eom = 0;
         this.rdata = 0;
         this.rdlen = 0;
-        /** @type {Array<*>} */
         this.nrdata = null;
         this.active = false;
     }
@@ -186,7 +192,7 @@ class RDataParser {
 
 const _rdataParser = new RDataParser();
 
-function ns_rdata_unpack(msg, eom, type, rdata, rdlen, nrdata) {
+export function ns_rdata_unpack(msg, eom, type, rdata, rdlen, nrdata) {
     _rdataParser.initialize(msg, eom, rdata, rdlen, nrdata);
 
     switch (type) {
@@ -250,8 +256,6 @@ function ns_rdata_unpack(msg, eom, type, rdata, rdlen, nrdata) {
 
     return 0;
 }
-
-exports.ns_rdata_unpack = ns_rdata_unpack;
 
 function RDataWriter() {
     this.srdata = null;
@@ -493,7 +497,7 @@ RDataWriter.prototype.rest = function () {
 
 const _rdataWriter = new RDataWriter();
 
-function ns_rdata_pack(type, srdata, buf, rdata, rdsiz) {
+export function ns_rdata_pack(type, srdata, buf, rdata, rdsiz) {
     /* javascript */
     _rdataWriter.initialize(srdata, buf, rdata, rdsiz);
 
@@ -559,5 +563,3 @@ function ns_rdata_pack(type, srdata, buf, rdata, rdsiz) {
 
     return _rdataWriter.nconsumed;
 }
-
-exports.ns_rdata_pack = ns_rdata_pack;

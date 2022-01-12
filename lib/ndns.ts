@@ -22,6 +22,9 @@ import {ns_newmsg_done, ns_newmsg_init, ns_newmsg_q, ns_newmsg_rr} from "./ns_ne
 
 import {ns_initparse, ns_parserr2} from "./ns_parse";
 
+import {ns_rdata_pack, ns_rdata_unpack} from "./ns_rdata";
+import {Socket} from "dgram";
+
 exports.ns_class = ns_class;
 exports.ns_sect = ns_sect;
 exports.ns_type = ns_type;
@@ -29,12 +32,6 @@ exports.ns_type_str = ns_type_str;
 exports.ns_flag = ns_flag;
 exports.ns_rcode = ns_rcode;
 exports.ns_opcode = ns_opcode;
-
-
-const {
-    ns_rdata_unpack,
-    ns_rdata_pack
-} = require("./ns_rdata.js");
 
 
 const debugLevel = Number.parseInt(process.env.NODE_DEBUG, 16);
@@ -54,12 +51,18 @@ const _rdata = Buffer.alloc(512);
 const _maxmsg = Buffer.alloc(NS_MAXMSG);
 
 class Message {
+    public header: MessageHeader;
+    public question: unknown[];
+    public answer: unknown[];
+    public authoritative: unknown[];
+    public additional: unknown[];
+
     constructor() {
         this.header = new MessageHeader();
-        this.question = new Array();
-        this.answer = new Array();
-        this.authoritative = new Array();
-        this.additional = new Array();
+        this.question = [];
+        this.answer = [];
+        this.authoritative = [];
+        this.additional = [];
     }
 
     /**
@@ -113,6 +116,7 @@ class Message {
         this.header.tc = _msg.getFlag(ns_flag.tc);
         this.header.rd = _msg.getFlag(ns_flag.rd);
         this.header.ra = _msg.getFlag(ns_flag.ra);
+        // @ts-ignore
         this.header.z = _msg.getFlag(ns_flag.a);
         this.header.ad = _msg.getFlag(ns_flag.ad);
         this.header.cd = _msg.getFlag(ns_flag.cd);
@@ -220,8 +224,7 @@ class Message {
                 }
             }
         }
-        const n = ns_newmsg_done(_newmsg);
-        return n;
+        return ns_newmsg_done(_newmsg);
     }
 
     /**
@@ -267,6 +270,8 @@ function asciiWrite(src, target, targetStart, sourceStart, sourceEnd) {
 }
 
 class ServerRequest extends Message {
+    private socket: Socket;
+    private rinfo: unknown;
     constructor(socket, rinfo) {
         super();
         this.socket = socket;
@@ -275,6 +280,9 @@ class ServerRequest extends Message {
 }
 
 class ServerResponse extends Message {
+    private socket: Socket;
+    private rinfo: {port:number, address:string};
+    private edns: { udp_payload_size: any; z: any; version: any; extended_rcode: any };
     constructor(req) {
         super();
         this.socket = req.socket;
@@ -360,6 +368,8 @@ exports.Server = Server;
 let id = 0;
 
 class ClientRequest extends Message {
+    private client: any;
+    private rinfo: any;
     /**
      * Do not construct directly. Use `Client.request`.
      * @param {Client} client
@@ -403,6 +413,8 @@ class ClientRequest extends Message {
 exports.ClientRequest = ClientRequest;
 
 class ClientResponse extends Message {
+    private socket: Socket;
+    private rinfo: any;
     constructor(socket, rinfo) {
         super();
         this.socket = socket;
@@ -548,6 +560,7 @@ class Client extends EventEmitter {
 exports.Client = Client;
 
 class DnsError extends Error {
+    private code: any;
     constructor(code, message) {
         super(message);
         this.code = code;

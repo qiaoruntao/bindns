@@ -5,7 +5,7 @@
  * An example of making an A request for "nodejs.org".
  */
 
-const bindns = require("../lib/ndns.js");
+const bindns = require("lib/ndns.ts");
 
 // Set up the client.
 const client = new bindns.Client();

@@ -288,7 +288,7 @@ export class ns_msg {
         return this._counts[section];
     }
 
-    getFlag(flag) {
+    getFlag(flag: number) {
         if (flag > 0 && flag < ns_flagdata.length)
             return (this._flags & ns_flagdata[flag].mask) >> ns_flagdata[flag].shift;
         return 0;
@@ -324,13 +324,13 @@ export class ns_newmsg {
  * A parsed record, using uncompressed network binary names.
  */
 export class ns_rr2 {
-    private nname: Buffer;
-    private nnamel: unknown;
-    private type: unknown;
-    private rr_class: unknown;
-    private ttl: unknown;
-    private rdlength: unknown;
-    private rdata: unknown;
+    public nname: Buffer;
+    public nnamel: unknown;
+    public type: unknown;
+    public rr_class: unknown;
+    public ttl: unknown;
+    public rdlength: unknown;
+    public rdata: unknown;
 
     constructor() {
         this.nname = Buffer.alloc(NS_MAXDNAME);
