@@ -1,6 +1,5 @@
+import * as ndns from "../lib/ndns";
 
-
-const ndns = require("lib/ndns.ts");
 const server = new ndns.Server("udp4");
 const BIND_PORT = 53;
 

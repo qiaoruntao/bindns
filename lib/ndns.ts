@@ -332,7 +332,7 @@ export class Server extends EventEmitter {
      * @param {"udp4"|"udp6"} type
      * @param {(req, res) => void} [requestListener]
      */
-    constructor(type, requestListener) {
+    constructor(type, requestListener = undefined) {
         super();
         try {
             this.socket = dgram.createSocket(type);
@@ -358,7 +358,7 @@ export class Server extends EventEmitter {
         });
     }
 
-    bind(port, address) {
+    bind(port, address = "127.0.0.1") {
         this.socket.bind(port, address);
     }
 
