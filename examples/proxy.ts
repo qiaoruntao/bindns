@@ -8,7 +8,9 @@ const REMOTE_PORT = 53;
 
 server.on("request", (req: any, res: any) => {
     const c_req = client.request(REMOTE_PORT, REMOTE_HOST, (err: any, c_res: any) => {
-        if (err) throw err;
+        if (err) {
+            throw err;
+        }
         res.header.aa = c_res.header.aa;
         res.header.rcode = c_res.header.rcode;
 
@@ -17,8 +19,12 @@ server.on("request", (req: any, res: any) => {
             // or res.answer.push(answer);
         }
 
-        for (const authoritative of c_res.authoritative) res.authoritative.push(authoritative);
-        for (const additional of c_res.additional) res.additional.push(additional);
+        for (const authoritative of c_res.authoritative) {
+            res.authoritative.push(authoritative);
+        }
+        for (const additional of c_res.additional) {
+            res.additional.push(additional);
+        }
 
         res.send();
     });

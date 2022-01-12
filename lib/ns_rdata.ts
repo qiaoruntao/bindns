@@ -6,10 +6,10 @@ import {EMSGSIZE, errno} from "./errno";
 
 import {NS_MAXDNAME, ns_type} from "./nameser";
 
-import {ns_name_ntop, ns_name_pton2, ns_name_unpack} from "./ns_name";
+import {ns_name_pton2} from "./ns_name";
+import {RDataParser} from "./r_data_parser";
 
-
-const hexvalue = [
+export const hexvalue = [
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "0a", "0b", "0c", "0d", "0e", "0f",
     "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "1a", "1b", "1c", "1d", "1e", "1f",
     "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "2a", "2b", "2c", "2d", "2e", "2f",
@@ -29,166 +29,10 @@ const hexvalue = [
 ];
 
 // Performance: these buffers are reused. They could be localized within name().
-const _dname = Buffer.alloc(NS_MAXDNAME);
-const _string = Buffer.alloc(NS_MAXDNAME);
+export const _dname = Buffer.alloc(NS_MAXDNAME);
+export const _string = Buffer.alloc(NS_MAXDNAME);
 // Likewise:
 const _ptr = new Ptr<number>(undefined);
-
-class RDataParser {
-    public msg: Buffer;
-    public eom: number;
-    public rdata: number;
-    public rdlen: number;
-    public nrdata: unknown[];
-    public active: boolean;
-
-    constructor() {
-        this.msg = null;
-        this.eom = 0;
-        this.rdata = 0;
-        this.rdlen = 0;
-        this.nrdata = null;
-        this.active = false;
-    }
-
-    initialize(msg, eom, rdata, rdlen, nrdata) {
-        this.msg = msg;
-        this.eom = eom;
-        this.rdata = rdata;
-        this.rdlen = rdlen;
-        this.nrdata = nrdata;
-        this.active = true;
-    }
-
-    finalize() {
-        this.active = false;
-        return this.rdlen === 0;
-    }
-
-    consume(n) {
-        if (this.active) {
-            if (this.rdlen < n) {
-                this.active = false;
-            } else {
-                this.rdata += n;
-                this.rdlen -= n;
-            }
-        }
-        return this.active;
-    }
-
-    IPv4() {
-        if (this.consume(4)) {
-            const {msg, rdata} = this;
-            const item = [
-                msg[rdata - 4],
-                msg[rdata - 3],
-                msg[rdata - 2],
-                msg[rdata - 1]
-            ].join(".");
-            this.nrdata.push(item);
-        }
-    }
-
-    IPv6() {
-        if (this.consume(16)) {
-            const {msg, rdata} = this;
-            const item = [
-                hexvalue[msg[rdata - 16]] +
-                hexvalue[msg[rdata - 15]],
-                hexvalue[msg[rdata - 14]] +
-                hexvalue[msg[rdata - 13]],
-                hexvalue[msg[rdata - 12]] +
-                hexvalue[msg[rdata - 11]],
-                hexvalue[msg[rdata - 10]] +
-                hexvalue[msg[rdata - 9]],
-                hexvalue[msg[rdata - 8]] +
-                hexvalue[msg[rdata - 7]],
-                hexvalue[msg[rdata - 6]] +
-                hexvalue[msg[rdata - 5]],
-                hexvalue[msg[rdata - 4]] +
-                hexvalue[msg[rdata - 3]],
-                hexvalue[msg[rdata - 2]] +
-                hexvalue[msg[rdata - 1]]
-            ].join(":");
-            this.nrdata.push(item);
-        }
-    }
-
-    name() {
-        let len, n;
-        if (this.active) {
-            if ((len = ns_name_unpack(this.msg, this.rdata, this.rdlen, _dname, _dname.length)) === -1) {
-                this.active = false;
-                return;
-            }
-            if ((n = ns_name_ntop(_dname, _string, _string.length)) === -1) {
-                this.active = false;
-                return;
-            }
-            const item = _string.toString("ascii", 0, n);
-            if (this.consume(len)) {
-                this.nrdata.push(item);
-            }
-        }
-    }
-
-    UInt32() {
-        if (this.consume(4)) {
-            const item = this.msg[this.rdata - 4] * 16777216 +
-                this.msg[this.rdata - 3] * 65536 +
-                this.msg[this.rdata - 2] * 256 +
-                this.msg[this.rdata - 1];
-            this.nrdata.push(item);
-        }
-    }
-
-    UInt16() {
-        if (this.consume(2)) {
-            const item = this.msg[this.rdata - 2] * 256 +
-                this.msg[this.rdata - 1];
-            this.nrdata.push(item);
-        }
-    }
-
-    UInt8() {
-        if (this.consume(1)) {
-            const item = this.msg[this.rdata - 1];
-            this.nrdata.push(item);
-        }
-    }
-
-    string(n) {
-        if (this.consume(n)) {
-            const item = this.msg.toString("ascii", this.rdata - n, this.rdata);
-            this.nrdata.push(item);
-        }
-    }
-
-    txt() {
-        if (this.active) {
-            let item = "";
-            if (this.rdlen > 0 && this.consume(1)) {
-                const n = this.msg[this.rdata - 1];
-                if (this.consume(n)) {
-                    const tmp = this.msg.toString("ascii", this.rdata - n, this.rdata);
-                    item += tmp;
-                } else {
-                    this.active = false;
-                    return;
-                }
-            }
-            this.nrdata.push(item);
-        }
-    }
-
-    rest() {
-        if (this.consume(this.rdlen)) {
-            const item = this.msg.slice(this.rdata - this.rdlen, this.rdata);
-            this.nrdata.push(item);
-        }
-    }
-}
 
 const _rdataParser = new RDataParser();
 
@@ -257,243 +101,265 @@ export function ns_rdata_unpack(msg, eom, type, rdata, rdlen, nrdata) {
     return 0;
 }
 
-function RDataWriter() {
-    this.srdata = null;
-    this.buf = null;
-    this.ordata = 0;
-    this.rdata = 0;
-    this.rdsiz = 0;
 
-    this.nconsumed = 0;
-    this.nitem = 0;
+class RDataWriter {
+    public srdata: unknown[];
+    public buf: Buffer;
+    public ordata: number;
+    public rdata: number;
+    public rdsiz: number;
+    public nconsumed: number;
+    public nitem: number;
+    public active: boolean;
 
-    this.active = false;
-}
+    constructor() {
+        this.srdata = null;
+        this.buf = null;
+        this.ordata = 0;
+        this.rdata = 0;
+        this.rdsiz = 0;
 
-RDataWriter.prototype.initialize = function (srdata, buf, rdata, rdsiz) {
-    this.srdata = srdata;
-    this.buf = buf;
-    this.ordata = rdata;
-    this.rdata = rdata;
-    this.rdsiz = rdsiz;
+        this.nconsumed = 0;
+        this.nitem = 0;
 
-    this.nconsumed = 0;
-    this.nitem = 0;
-
-    this.active = true;
-};
-RDataWriter.prototype.consume = function (n) {
-    if (this.active) {
-        if (this.rdsiz < n) {
-            this.active = false;
-        } else {
-            this.rdata += n;
-            this.rdsiz -= n;
-
-            this.nconsumed += n;
-        }
+        this.active = false;
     }
-    return this.active;
-};
-RDataWriter.prototype.next = function () {
-    let item;
-    if (this.nitem < this.srdata.length) {
-        item = this.srdata[this.nitem++];
-    }
-    return item;
-};
-RDataWriter.prototype.IPv4 = function () {
-    let item = this.next();
-    if (this.consume(4)) {
-        if (typeof item === "string") {
-            item = item.split(".");
-        } else if (!Buffer.isBuffer(item) && !Array.isArray(item)) {
-            item = item.toString().split(".");
-        }
-        if (item.length < 4) {
-            this.active = false;
-            return;
-        }
-        this.buf[this.rdata - 4] = Number.parseInt(item[0], 10);
-        this.buf[this.rdata - 3] = Number.parseInt(item[1], 10);
-        this.buf[this.rdata - 2] = Number.parseInt(item[2], 10);
-        this.buf[this.rdata - 1] = Number.parseInt(item[3], 10);
-    }
-};
-RDataWriter.prototype.IPv6 = function () {
-    const item = this.next();
-    if (this.consume(16)) {
-        if (Buffer.isBuffer(item) || Array.isArray(item)) {
-            if (item.length < 16) {
-                this.active = false;
-                return;
-            }
 
-            this.buf[this.rdata - 16] = item[0];
-            this.buf[this.rdata - 15] = item[1];
-            this.buf[this.rdata - 14] = item[2];
-            this.buf[this.rdata - 13] = item[3];
-            this.buf[this.rdata - 12] = item[4];
-            this.buf[this.rdata - 11] = item[5];
-            this.buf[this.rdata - 10] = item[6];
-            this.buf[this.rdata - 9] = item[7];
-            this.buf[this.rdata - 8] = item[8];
-            this.buf[this.rdata - 7] = item[9];
-            this.buf[this.rdata - 6] = item[10];
-            this.buf[this.rdata - 5] = item[11];
-            this.buf[this.rdata - 3] = item[12];
-            this.buf[this.rdata - 2] = item[13];
-            this.buf[this.rdata - 1] = item[14];
-            this.buf[this.rdata - 1] = item[15];
-        } else {
-            const tmp = item.toString().split(":");
-            if (tmp.length < 8) {
+    initialize(srdata, buf, rdata, rdsiz) {
+        this.srdata = srdata;
+        this.buf = buf;
+        this.ordata = rdata;
+        this.rdata = rdata;
+        this.rdsiz = rdsiz;
+
+        this.nconsumed = 0;
+        this.nitem = 0;
+
+        this.active = true;
+    };
+
+    consume(n) {
+        if (this.active) {
+            if (this.rdsiz < n) {
                 this.active = false;
-                return;
-            }
-            for (let i = 0; i < 8; i++) {
-                const n = Number.parseInt(tmp[i], 16);
-                this.buf[this.rdata - 16 + i * 2] = n >> 8;
-                this.buf[this.rdata - 15 + i * 2] = n >> 0;
+            } else {
+                this.rdata += n;
+                this.rdsiz -= n;
+
+                this.nconsumed += n;
             }
         }
-    }
-};
-RDataWriter.prototype.name = function () {
-    const item = this.next();
-    let len, n;
-    if (this.active) {
-        if (Buffer.isBuffer(item)) {
-            len = item.length;
-            if (len + 1 > _string.length) {
-                this.active = false;
-                return;
-            }
-            copy(item, _string, 0, 0, len);
-            _string[len] = 0;
-            if (ns_name_pton2(_string, _dname, _dname.length, _ptr) === -1) {
-                this.active = false;
-                return;
-            }
-            n = _ptr.get();
-            if (this.consume(n)) {
-                copy(_dname, this.buf, this.rdata - n, 0, n);
-            }
+        return this.active;
+    };
+
+    next() {
+        let item;
+        if (this.nitem < this.srdata.length) {
+            item = this.srdata[this.nitem++];
         }
-        if (typeof item === "string") {
-            if ((len = _string.write(item, 0)) === _string.length) {
-                this.active = false;
-                return;
+        return item;
+    };
+
+    IPv4() {
+        let item = this.next();
+        if (this.consume(4)) {
+            if (typeof item === "string") {
+                item = item.split(".");
+            } else if (!Buffer.isBuffer(item) && !Array.isArray(item)) {
+                item = item.toString().split(".");
             }
-            _string[len] = 0;
-            if (ns_name_pton2(_string, _dname, _dname.length, _ptr) === -1) {
-                this.active = false;
-                return;
-            }
-            n = _ptr.get();
-            if (this.consume(n)) {
-                copy(_dname, this.buf, this.rdata - n, 0, n);
-            }
-        } else {
-            this.active = false;
-            return;
-        }
-    }
-};
-RDataWriter.prototype.UInt32 = function () {
-    let item = this.next();
-    if (this.consume(4)) {
-        if (Buffer.isBuffer(item) || Array.isArray(item)) {
             if (item.length < 4) {
                 this.active = false;
                 return;
             }
-            this.buf[this.rdata - 4] = item[0];
-            this.buf[this.rdata - 3] = item[1];
-            this.buf[this.rdata - 2] = item[2];
-            this.buf[this.rdata - 1] = item[3];
-        } else {
-            if (typeof item !== "number") {
-                item = Number.parseInt(item, 10);
-            }
-            this.buf[this.rdata - 4] = item >> 24;
-            this.buf[this.rdata - 3] = item >> 16;
-            this.buf[this.rdata - 2] = item >> 8;
-            this.buf[this.rdata - 1] = item >> 0;
+            this.buf[this.rdata - 4] = Number.parseInt(item[0], 10);
+            this.buf[this.rdata - 3] = Number.parseInt(item[1], 10);
+            this.buf[this.rdata - 2] = Number.parseInt(item[2], 10);
+            this.buf[this.rdata - 1] = Number.parseInt(item[3], 10);
         }
-    }
-};
-RDataWriter.prototype.UInt16 = function () {
-    let item = this.next();
-    if (this.consume(2)) {
-        if (Buffer.isBuffer(item) || Array.isArray(item)) {
-            if (item.length < 2) {
-                this.active = false;
-                return;
-            }
-            this.buf[this.rdata - 2] = item[0];
-            this.buf[this.rdata - 1] = item[1];
-        } else {
-            if (typeof item !== "number") {
-                item = Number.parseInt(item, 10);
-            }
-            this.buf[this.rdata - 2] = item >> 8;
-            this.buf[this.rdata - 1] = item >> 0;
-        }
-    }
-};
-RDataWriter.prototype.UInt8 = function () {
-    let item = this.next();
-    if (this.consume(1)) {
-        if (Buffer.isBuffer(item) || Array.isArray(item)) {
-            if (item.length < 1) {
-                this.active = false;
-                return;
-            }
-            this.buf[this.rdata - 1] = item[0];
-        } else {
-            if (typeof item !== "number") {
-                item = Number.parseInt(item, 10);
-            }
-            this.buf[this.rdata - 1] = item;
-        }
-    }
-};
-RDataWriter.prototype.txt = function () {
-    const item = this.next();
-    let n;
-    if (this.active) {
-        if (typeof item === "string") {
-            if ((n = _string.write(item, 0)) === _string.length) {
-                this.active = false;
-                return;
-            }
-            if (n > 0 && this.consume(1)) {
-                this.buf[this.rdata - 1] = n;
-                if (this.consume(n)) {
-                    copy(_string, this.buf, this.rdata - n, 0, n);
-                } else {
+    };
+
+    IPv6() {
+        const item = this.next();
+        if (this.consume(16)) {
+            if (Buffer.isBuffer(item) || Array.isArray(item)) {
+                if (item.length < 16) {
                     this.active = false;
                     return;
                 }
-            }
-        } else if (Buffer.isBuffer(item)) {
-            n = item.length;
-            if (n > 0 && this.consume(1)) {
-                this.buf[this.rdata - 1] = n;
-                if (this.consume(n)) {
-                    copy(item, this.buf, this.rdata - n, 0, n);
-                } else {
+
+                this.buf[this.rdata - 16] = item[0];
+                this.buf[this.rdata - 15] = item[1];
+                this.buf[this.rdata - 14] = item[2];
+                this.buf[this.rdata - 13] = item[3];
+                this.buf[this.rdata - 12] = item[4];
+                this.buf[this.rdata - 11] = item[5];
+                this.buf[this.rdata - 10] = item[6];
+                this.buf[this.rdata - 9] = item[7];
+                this.buf[this.rdata - 8] = item[8];
+                this.buf[this.rdata - 7] = item[9];
+                this.buf[this.rdata - 6] = item[10];
+                this.buf[this.rdata - 5] = item[11];
+                this.buf[this.rdata - 3] = item[12];
+                this.buf[this.rdata - 2] = item[13];
+                this.buf[this.rdata - 1] = item[14];
+                this.buf[this.rdata - 1] = item[15];
+            } else {
+                const tmp = item.toString().split(":");
+                if (tmp.length < 8) {
                     this.active = false;
                     return;
                 }
+                for (let i = 0; i < 8; i++) {
+                    const n = Number.parseInt(tmp[i], 16);
+                    this.buf[this.rdata - 16 + i * 2] = n >> 8;
+                    this.buf[this.rdata - 15 + i * 2] = n >> 0;
+                }
             }
         }
-    }
-};
-RDataWriter.prototype.rest = function () {
-    this.consume(this.rdsiz);
-};
+    };
+
+    name() {
+        const item = this.next();
+        let len, n;
+        if (this.active) {
+            if (Buffer.isBuffer(item)) {
+                len = item.length;
+                if (len + 1 > _string.length) {
+                    this.active = false;
+                    return;
+                }
+                copy(item, _string, 0, 0, len);
+                _string[len] = 0;
+                if (ns_name_pton2(_string, _dname, _dname.length, _ptr) === -1) {
+                    this.active = false;
+                    return;
+                }
+                n = _ptr.get();
+                if (this.consume(n)) {
+                    copy(_dname, this.buf, this.rdata - n, 0, n);
+                }
+            }
+            if (typeof item === "string") {
+                if ((len = _string.write(item, 0)) === _string.length) {
+                    this.active = false;
+                    return;
+                }
+                _string[len] = 0;
+                if (ns_name_pton2(_string, _dname, _dname.length, _ptr) === -1) {
+                    this.active = false;
+                    return;
+                }
+                n = _ptr.get();
+                if (this.consume(n)) {
+                    copy(_dname, this.buf, this.rdata - n, 0, n);
+                }
+            } else {
+                this.active = false;
+                return;
+            }
+        }
+    };
+
+    UInt32() {
+        let item = this.next();
+        if (this.consume(4)) {
+            if (Buffer.isBuffer(item) || Array.isArray(item)) {
+                if (item.length < 4) {
+                    this.active = false;
+                    return;
+                }
+                this.buf[this.rdata - 4] = item[0];
+                this.buf[this.rdata - 3] = item[1];
+                this.buf[this.rdata - 2] = item[2];
+                this.buf[this.rdata - 1] = item[3];
+            } else {
+                if (typeof item !== "number") {
+                    item = Number.parseInt(item, 10);
+                }
+                this.buf[this.rdata - 4] = item >> 24;
+                this.buf[this.rdata - 3] = item >> 16;
+                this.buf[this.rdata - 2] = item >> 8;
+                this.buf[this.rdata - 1] = item >> 0;
+            }
+        }
+    };
+
+    UInt16() {
+        let item = this.next();
+        if (this.consume(2)) {
+            if (Buffer.isBuffer(item) || Array.isArray(item)) {
+                if (item.length < 2) {
+                    this.active = false;
+                    return;
+                }
+                this.buf[this.rdata - 2] = item[0];
+                this.buf[this.rdata - 1] = item[1];
+            } else {
+                if (typeof item !== "number") {
+                    item = Number.parseInt(item, 10);
+                }
+                this.buf[this.rdata - 2] = item >> 8;
+                this.buf[this.rdata - 1] = item >> 0;
+            }
+        }
+    };
+
+    UInt8() {
+        let item = this.next();
+        if (this.consume(1)) {
+            if (Buffer.isBuffer(item) || Array.isArray(item)) {
+                if (item.length < 1) {
+                    this.active = false;
+                    return;
+                }
+                this.buf[this.rdata - 1] = item[0];
+            } else {
+                if (typeof item !== "number") {
+                    item = Number.parseInt(item, 10);
+                }
+                this.buf[this.rdata - 1] = item;
+            }
+        }
+    };
+
+    txt() {
+        const item = this.next();
+        let n;
+        if (this.active) {
+            if (typeof item === "string") {
+                if ((n = _string.write(item, 0)) === _string.length) {
+                    this.active = false;
+                    return;
+                }
+                if (n > 0 && this.consume(1)) {
+                    this.buf[this.rdata - 1] = n;
+                    if (this.consume(n)) {
+                        copy(_string, this.buf, this.rdata - n, 0, n);
+                    } else {
+                        this.active = false;
+                        return;
+                    }
+                }
+            } else if (Buffer.isBuffer(item)) {
+                n = item.length;
+                if (n > 0 && this.consume(1)) {
+                    this.buf[this.rdata - 1] = n;
+                    if (this.consume(n)) {
+                        copy(item, this.buf, this.rdata - n, 0, n);
+                    } else {
+                        this.active = false;
+                        return;
+                    }
+                }
+            }
+        }
+    };
+
+    rest() {
+        this.consume(this.rdsiz);
+    };
+}
 
 const _rdataWriter = new RDataWriter();
 
