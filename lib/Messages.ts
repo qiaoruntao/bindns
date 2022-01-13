@@ -47,6 +47,10 @@ export class MessageQuestion {
         this.type = type;
         this.class = klass;
     }
+
+    genKey() {
+        return `${this.name}${this.type}${this.class}`;
+    }
 };
 
 export class MessageRR {
@@ -54,7 +58,7 @@ export class MessageRR {
     public type: ns_type_t;
     public class: ns_class_t;
     public ttl: number;
-    public rdata: unknown[];
+    public rdata: string[];
 
     constructor(name, type, klass, ttl, rdata = []) {
         this.name = name;

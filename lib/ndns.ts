@@ -38,7 +38,7 @@ export {
     ns_type_str
 } from "./nameser";
 
-const debugLevel = Number.parseInt(process.env.NODE_DEBUG, 16);
+const debugLevel = Number.parseInt(process.env.NODE_DEBUG || "", 16);
 const debug = debugLevel & 0x4 ? x => console.error("NDNS: " + x) : () => {
 };
 
@@ -106,7 +106,7 @@ export class Message {
         }
     }
 
-    parseOnce(buf: Buffer) {
+    parseOnce(buf: Buffer): boolean | number {
         if (ns_initparse(buf, buf.length, _msg) === -1) {
             return false;
         }
@@ -165,7 +165,7 @@ export class Message {
         return true;
     }
 
-    private writeOnce(buf: Buffer, bufsiz: number) {
+    writeOnce(buf: Buffer, bufsiz: number) {
         if (ns_newmsg_init(buf, bufsiz, _newmsg) === -1) {
             return -1;
         }
@@ -235,9 +235,10 @@ export class Message {
             // TODO(perf): as long as _maxmsg is large enough, send() accepts
             // offset and length parameters. Not sure if that copies internally.
             const tmp = Buffer.allocUnsafe(n);
-            for (let i = 0; i < n; i++)
+            for (let i = 0; i < n; i++) {
                 tmp[i] = _maxmsg[i];
-            socket.send(tmp, port, host, (err, nbytes) => {
+            }
+            socket.send(tmp, port, host, (err, _nbytes) => {
                 if (err) debug(err);
             });
         }
